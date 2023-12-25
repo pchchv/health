@@ -59,3 +59,11 @@ type Stream struct {
 	KeyValues map[string]string
 	*Job
 }
+
+func (s *Stream) NewJob(name string) *Job {
+	return &Job{
+		Stream:  s,
+		JobName: name,
+		Start:   time.Now(),
+	}
+}
