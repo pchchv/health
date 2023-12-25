@@ -16,3 +16,11 @@ type EventReceiver interface {
 }
 
 type CompletionStatus int
+
+type Sink interface {
+	EmitEvent(job string, event string, kvs map[string]string)
+	EmitEventErr(job string, event string, err error, kvs map[string]string)
+	EmitTiming(job string, event string, nanoseconds int64, kvs map[string]string)
+	EmitComplete(job string, status CompletionStatus, nanoseconds int64, kvs map[string]string)
+	EmitGauge(job string, event string, value float64, kvs map[string]string)
+}
