@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+var goroot = runtime.GOROOT()
+
 // Frame contains all necessary information about to generate a line in a callstack.
 type Frame struct {
 	File            string
@@ -28,4 +30,9 @@ func packageAndName(fn *runtime.Func) (pkg string, name string) {
 		name = name[period+1:]
 	}
 	return
+}
+
+// isSystemPackage returns true iff the package is a system package like 'runtime' or 'net/http'.
+func isSystemPackage(file, pkg string) bool {
+	return strings.HasPrefix(file, goroot)
 }
