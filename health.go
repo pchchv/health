@@ -54,6 +54,44 @@ type Job struct {
 	Start     time.Time
 }
 
+func (j *Job) mergedKeyValues(instanceKvs map[string]string) map[string]string {
+	var allKvs map[string]string
+
+	// Count how many maps actually have contents in them.
+	// If it's 0 or 1, we won't allocate a new map.
+	// Also, optimistically set allKvs.
+	// We might use it or we might overwrite the value with a newly made map.
+	var kvCount = 0
+	if len(j.KeyValues) > 0 {
+		kvCount += 1
+		allKvs = j.KeyValues
+	}
+
+	if len(j.Stream.KeyValues) > 0 {
+		kvCount += 1
+		allKvs = j.Stream.KeyValues
+	}
+
+	if len(instanceKvs) > 0 {
+		kvCount += 1
+		allKvs = instanceKvs
+	}
+
+	if kvCount > 1 {
+		allKvs = make(map[string]string)
+		for k, v := range j.Stream.KeyValues {
+			allKvs[k] = v
+		}
+		for k, v := range j.KeyValues {
+			allKvs[k] = v
+		}
+		for k, v := range instanceKvs {
+			allKvs[k] = v
+		}
+	}
+	return allKvs
+}
+
 type Stream struct {
 	Sinks     []Sink
 	KeyValues map[string]string
