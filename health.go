@@ -54,6 +54,21 @@ type Job struct {
 	Start     time.Time
 }
 
+func (j *Job) KeyValue(key string, value string) *Job {
+	if j.KeyValues == nil {
+		j.KeyValues = make(map[string]string)
+	}
+	j.KeyValues[key] = value
+	return j
+}
+
+func (j *Job) Event(eventName string) {
+	allKvs := j.mergedKeyValues(nil)
+	for _, sink := range j.Stream.Sinks {
+		sink.EmitEvent(j.JobName, eventName, allKvs)
+	}
+}
+
 func (j *Job) mergedKeyValues(instanceKvs map[string]string) map[string]string {
 	var allKvs map[string]string
 
