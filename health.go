@@ -60,6 +60,12 @@ type Stream struct {
 	*Job
 }
 
+func NewStream() *Stream {
+	s := &Stream{}
+	s.Job = s.NewJob("general")
+	return s
+}
+
 func (s *Stream) NewJob(name string) *Job {
 	return &Job{
 		Stream:  s,
