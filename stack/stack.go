@@ -1,6 +1,9 @@
 package stack
 
-import "runtime"
+import (
+	"bytes"
+	"runtime"
+)
 
 var MaxStackDepth = 50 // maximum number of stackframes on any error
 
@@ -26,4 +29,14 @@ func (t *Trace) Frames() []Frame {
 		}
 	}
 	return t.frames
+}
+
+// Stack returns a formatted callstack.
+func (t *Trace) Stack() []byte {
+	buf := bytes.Buffer{}
+	for _, frame := range t.Frames() {
+		buf.WriteString(frame.String())
+		buf.WriteRune('\n')
+	}
+	return buf.Bytes()
 }
