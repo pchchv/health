@@ -1,6 +1,7 @@
 package stack
 
 import (
+	"fmt"
 	"runtime"
 	"strings"
 )
@@ -15,6 +16,19 @@ type Frame struct {
 	Package         string
 	IsSystemPackage bool
 	ProgramCounter  uintptr
+}
+
+
+// Func returns the function that this stackframe corresponds to.
+func (frame *Frame) Func() *runtime.Func {
+	if frame.ProgramCounter == 0 {
+		return nil
+	}
+	return runtime.FuncForPC(frame.ProgramCounter)
+}
+
+func (frame *Frame) String() string {
+	return fmt.Sprintf("%s:%d %s", frame.File, frame.LineNumber, frame.Name)
 }
 
 func packageAndName(fn *runtime.Func) (pkg string, name string) {
