@@ -18,6 +18,21 @@ type Frame struct {
 	ProgramCounter  uintptr
 }
 
+// NewFrame popoulates a stack frame object from the program counter.
+func NewFrame(pc uintptr) Frame {
+	frame := Frame{ProgramCounter: pc}
+	if frame.Func() == nil {
+		return frame
+	}
+
+	frame.Package, frame.Name = packageAndName(frame.Func())
+
+	// pc -1 because the program counters we use are usually return addresses,
+	// and we want to show the line that corresponds to the function call
+	frame.File, frame.LineNumber = frame.Func().FileLine(pc - 1)
+	frame.IsSystemPackage = isSystemPackage(frame.File, frame.Package)
+	return frame
+}
 
 // Func returns the function that this stackframe corresponds to.
 func (frame *Frame) Func() *runtime.Func {
