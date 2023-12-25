@@ -53,3 +53,9 @@ type Job struct {
 	KeyValues map[string]string
 	Start     time.Time
 }
+
+type Stream struct {
+	Sinks     []Sink
+	KeyValues map[string]string
+	*Job
+}
