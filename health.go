@@ -1,5 +1,7 @@
 package health
 
+import "time"
+
 const (
 	Success CompletionStatus = iota
 	ValidationError
@@ -43,4 +45,11 @@ type CompletionStatus int
 
 func (cs CompletionStatus) String() string {
 	return completionStatusToString[cs]
+}
+
+type Job struct {
+	Stream    *Stream
+	JobName   string
+	KeyValues map[string]string
+	Start     time.Time
 }
