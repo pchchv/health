@@ -40,3 +40,7 @@ type Sink interface {
 }
 
 type CompletionStatus int
+
+func (cs CompletionStatus) String() string {
+	return completionStatusToString[cs]
+}
