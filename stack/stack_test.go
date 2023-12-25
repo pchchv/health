@@ -20,6 +20,16 @@ func (s someT) level0() *Trace {
 	return s.level1()
 }
 
+func TestNewTrace(t *testing.T) {
+	trace := level0()
+	frames := trace.Frames()
+	// this is a persnickety test that will fail as the file is modified
+	assertFrame(t, &frames[0], "stack_test\\.go", 11, "level2")
+	assertFrame(t, &frames[1], "stack_test\\.go", 15, "level1")
+	assertFrame(t, &frames[2], "stack_test\\.go", 19, "level0")
+	assertFrame(t, &frames[3], "stack_test\\.go", 39, "TestNewTrace")
+}
+
 func level2() *Trace {
 	return NewTrace(0)
 }
