@@ -16,3 +16,14 @@ func NewTrace(skip int) *Trace {
 		stack: stack[:length],
 	}
 }
+
+// Frames returns an array of frames containing information about the stack.
+func (t *Trace) Frames() []Frame {
+	if t.frames == nil {
+		t.frames = make([]Frame, len(t.stack))
+		for i, pc := range t.stack {
+			t.frames[i] = NewFrame(pc)
+		}
+	}
+	return t.frames
+}
