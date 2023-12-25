@@ -73,3 +73,16 @@ func (s *Stream) NewJob(name string) *Job {
 		Start:   time.Now(),
 	}
 }
+
+func (s *Stream) AddSink(sink Sink) *Stream {
+	s.Sinks = append(s.Sinks, sink)
+	return s
+}
+
+func (s *Stream) KeyValue(key string, value string) *Stream {
+	if s.KeyValues == nil {
+		s.KeyValues = make(map[string]string)
+	}
+	s.KeyValues[key] = value
+	return s
+}
