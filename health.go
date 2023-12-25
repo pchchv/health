@@ -14,3 +14,5 @@ type EventReceiver interface {
 	Gauge(eventName string, value float64)
 	GaugeKv(eventName string, value float64, kvs map[string]string)
 }
+
+type CompletionStatus int
