@@ -41,6 +41,15 @@ func TestNewTraceWithTypes(t *testing.T) {
 	assertFrame(t, &frames[3], "stack_test\\.go", 66, "TestNewTraceWithTypes")
 }
 
+func TestStackPrint(t *testing.T) {
+	trace := level0()
+	stack := trace.Stack()
+	reg := regexp.MustCompile("stack_test\\.go:11 level2\n.+stack_test\\.go:15 level1\n.+stack_test\\.go:19 level0")
+	if !reg.Match(trace.Stack()) {
+		t.Errorf("trace didn't match. Got:\n%s\n", string(stack))
+	}
+}
+
 func level2() *Trace {
 	return NewTrace(0)
 }
