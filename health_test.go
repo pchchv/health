@@ -1,6 +1,11 @@
 package health
 
-import "errors"
+import (
+	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 type testSink struct {
 	LastEmitKind   string // "Event", "EventErr", ..., "Complete"
@@ -76,4 +81,45 @@ func errorFunc() error {
 
 func panicFunc() error {
 	panic("wat")
+}
+
+func TestRun(t *testing.T) {
+	s := NewStream()
+
+	ts := &testSink{}
+	s.AddSink(ts)
+
+	err := s.Run("foo", successFunc)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "Complete", ts.LastEmitKind)
+	assert.Equal(t, "foo", ts.LastJob)
+	assert.Equal(t, Success, ts.LastStatus)
+
+	err = s.Run("foo", errorFunc)
+	assert.Equal(t, "sad_day", err.Error())
+
+	assert.Equal(t, "Complete", ts.LastEmitKind)
+	assert.Equal(t, "foo", ts.LastJob)
+	assert.Equal(t, Error, ts.LastStatus)
+
+	err = s.Run("foo", panicFunc)
+	assert.Equal(t, "wat", err.Error())
+
+	assert.Equal(t, "Complete", ts.LastEmitKind)
+	assert.Equal(t, "foo", ts.LastJob)
+	assert.Equal(t, Panic, ts.LastStatus)
+
+	// Panicing will fire an EventErr and then a Complete(Panic)
+	// This test relies on the fact that LastErr isn't cleared when a Complete comes in
+	assert.Equal(t, "wat", ts.LastErr.Error())
+
+	// Now just make sure that job also has a similar Run function:
+	j := s.NewJob("bob")
+	err = j.Run(successFunc)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "Complete", ts.LastEmitKind)
+	assert.Equal(t, "bob", ts.LastJob)
+	assert.Equal(t, Success, ts.LastStatus)
 }
