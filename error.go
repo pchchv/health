@@ -15,3 +15,7 @@ type UnmutedError struct {
 	Stack   *stack.Trace
 	Emitted bool
 }
+
+func (e *UnmutedError) Error() string {
+	return e.Err.Error()
+}
