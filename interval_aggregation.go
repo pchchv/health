@@ -26,7 +26,8 @@ func (a *TimerAggregation) ingest(nanos int64) {
 
 type ErrorCounter struct {
 	Count int64 `json:"count"`
-	// Let's keep a ring buffer of some errors. I feel like this isn't the best data structure / plan of attack here but works for now.
+	// Let's keep a ring buffer of some errors.
+	// I feel like this isn't the best data structure / plan of attack here but works for now.
 	errorSamples     [5]error
 	errorSampleIndex int
 }
@@ -45,4 +46,23 @@ func (ec *ErrorCounter) addError(inputErr error) {
 		ec.errorSampleIndex = (ec.errorSampleIndex + 1) % n
 		ec.errorSamples[ec.errorSampleIndex] = inputErr
 	}
+}
+
+func (ec *ErrorCounter) getErrorSamples() []error {
+	// count how many non-nil errors are there so we can make a slice of the right size
+	count := 0
+	for _, e := range ec.errorSamples {
+		if e != nil {
+			count++
+		}
+	}
+	ret := make([]error, 0, count)
+
+	// put non-nil errors in slice
+	for _, e := range ec.errorSamples {
+		if e != nil {
+			ret = append(ret, e)
+		}
+	}
+	return ret
 }
