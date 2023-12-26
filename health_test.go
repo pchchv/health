@@ -63,3 +63,7 @@ func (s *testSink) EmitComplete(job string, status CompletionStatus, nanos int64
 	s.LastNanos = nanos
 	s.LastStatus = status
 }
+
+func successFunc() error {
+	return nil
+}
