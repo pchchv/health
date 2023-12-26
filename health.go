@@ -242,3 +242,8 @@ func (s *Stream) KeyValue(key string, value string) *Stream {
 	s.KeyValues[key] = value
 	return s
 }
+
+func (s *Stream) Run(jobName string, f func() error) error {
+	j := s.NewJob(jobName)
+	return j.Run(f)
+}
