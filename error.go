@@ -19,3 +19,7 @@ type UnmutedError struct {
 func (e *UnmutedError) Error() string {
 	return e.Err.Error()
 }
+
+func Mute(err error) *MutedError {
+	return &MutedError{Err: err}
+}
