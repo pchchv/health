@@ -1,6 +1,11 @@
 package health
 
-import "time"
+import (
+	"errors"
+	"fmt"
+	"runtime"
+	"time"
+)
 
 const (
 	Success CompletionStatus = iota
@@ -142,6 +147,29 @@ func (j *Job) CompleteKv(status CompletionStatus, kvs map[string]string) {
 	for _, sink := range j.Stream.Sinks {
 		sink.EmitComplete(j.JobName, status, time.Since(j.Start).Nanoseconds(), allKvs)
 	}
+}
+
+func (j *Job) Run(f func() error) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			stack := make([]byte, 4096)
+			stack = stack[:runtime.Stack(stack, false)]
+			// recovered value from panic() is an interface{}, and it might not be `error`
+			// do not simply type-assert here
+			err = errors.New(fmt.Sprint(r))
+			j.EventErrKv("panic", err, Kvs{"stack": string(stack)})
+			j.Complete(Panic)
+		}
+	}()
+
+	err = f()
+	if err != nil {
+		j.Complete(Error)
+	} else {
+		j.Complete(Success)
+	}
+
+	return
 }
 
 func (j *Job) mergedKeyValues(instanceKvs map[string]string) map[string]string {
