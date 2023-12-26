@@ -21,3 +21,10 @@ func (a *TimerAggregation) ingest(nanos int64) {
 		a.NanosMax = nanos
 	}
 }
+
+type ErrorCounter struct {
+	Count int64 `json:"count"`
+	// Let's keep a ring buffer of some errors. I feel like this isn't the best data structure / plan of attack here but works for now.
+	errorSamples     [5]error
+	errorSampleIndex int
+}
