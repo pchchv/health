@@ -80,3 +80,21 @@ func (am *aggregationMaps) initAggregationMaps() {
 	am.Events = make(map[string]int64)
 	am.EventErrs = make(map[string]*ErrorCounter)
 }
+
+func (am *aggregationMaps) getCounterErrs(event string) *ErrorCounter {
+	ce := am.EventErrs[event]
+	if ce == nil {
+		ce = &ErrorCounter{}
+		am.EventErrs[event] = ce
+	}
+	return ce
+}
+
+func (am *aggregationMaps) getTimers(event string) *TimerAggregation {
+	t := am.Timers[event]
+	if t == nil {
+		t = &TimerAggregation{}
+		am.Timers[event] = t
+	}
+	return t
+}
