@@ -108,3 +108,19 @@ type JobAggregation struct {
 	CountError           int64 `json:"count_error"`
 	CountJunk            int64 `json:"count_junk"`
 }
+
+func (a *JobAggregation) ingest(status CompletionStatus, nanos int64) {
+	a.TimerAggregation.ingest(nanos)
+	switch status {
+	case Success:
+		a.CountSuccess++
+	case ValidationError:
+		a.CountValidationError++
+	case Panic:
+		a.CountPanic++
+	case Error:
+		a.CountError++
+	case Junk:
+		a.CountJunk++
+	}
+}
