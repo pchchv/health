@@ -73,3 +73,10 @@ type aggregationMaps struct {
 	Events    map[string]int64             `json:"events"`
 	EventErrs map[string]*ErrorCounter     `json:"event_errs"`
 }
+
+func (am *aggregationMaps) initAggregationMaps() {
+	am.Timers = make(map[string]*TimerAggregation)
+	am.Gauges = make(map[string]float64)
+	am.Events = make(map[string]int64)
+	am.EventErrs = make(map[string]*ErrorCounter)
+}
