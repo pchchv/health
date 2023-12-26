@@ -23,3 +23,12 @@ func (e *UnmutedError) Error() string {
 func Mute(err error) *MutedError {
 	return &MutedError{Err: err}
 }
+
+func wrapErr(err error) error {
+	switch err := err.(type) {
+	case *MutedError, *UnmutedError:
+		return err
+	default:
+		return &UnmutedError{Err: err, Stack: stack.NewTrace(2)}
+	}
+}
