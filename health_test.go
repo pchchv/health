@@ -1,5 +1,7 @@
 package health
 
+import "errors"
+
 type testSink struct {
 	LastEmitKind   string // "Event", "EventErr", ..., "Complete"
 	LastJob        string
@@ -66,4 +68,12 @@ func (s *testSink) EmitComplete(job string, status CompletionStatus, nanos int64
 
 func successFunc() error {
 	return nil
+}
+
+func errorFunc() error {
+	return errors.New("sad_day")
+}
+
+func panicFunc() error {
+	panic("wat")
 }
