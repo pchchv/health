@@ -116,6 +116,20 @@ func (j *Job) TimingKv(eventName string, nanoseconds int64, kvs map[string]strin
 	}
 }
 
+func (j *Job) Gauge(eventName string, value float64) {
+	allKvs := j.mergedKeyValues(nil)
+	for _, sink := range j.Stream.Sinks {
+		sink.EmitGauge(j.JobName, eventName, value, allKvs)
+	}
+}
+
+func (j *Job) GaugeKv(eventName string, value float64, kvs map[string]string) {
+	allKvs := j.mergedKeyValues(kvs)
+	for _, sink := range j.Stream.Sinks {
+		sink.EmitGauge(j.JobName, eventName, value, allKvs)
+	}
+}
+
 func (j *Job) mergedKeyValues(instanceKvs map[string]string) map[string]string {
 	var allKvs map[string]string
 
