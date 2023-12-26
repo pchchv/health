@@ -130,6 +130,20 @@ func (j *Job) GaugeKv(eventName string, value float64, kvs map[string]string) {
 	}
 }
 
+func (j *Job) Complete(status CompletionStatus) {
+	allKvs := j.mergedKeyValues(nil)
+	for _, sink := range j.Stream.Sinks {
+		sink.EmitComplete(j.JobName, status, time.Since(j.Start).Nanoseconds(), allKvs)
+	}
+}
+
+func (j *Job) CompleteKv(status CompletionStatus, kvs map[string]string) {
+	allKvs := j.mergedKeyValues(kvs)
+	for _, sink := range j.Stream.Sinks {
+		sink.EmitComplete(j.JobName, status, time.Since(j.Start).Nanoseconds(), allKvs)
+	}
+}
+
 func (j *Job) mergedKeyValues(instanceKvs map[string]string) map[string]string {
 	var allKvs map[string]string
 
