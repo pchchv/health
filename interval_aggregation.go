@@ -98,3 +98,13 @@ func (am *aggregationMaps) getTimers(event string) *TimerAggregation {
 	}
 	return t
 }
+
+type JobAggregation struct {
+	aggregationMaps
+	TimerAggregation
+	CountValidationError int64 `json:"count_validation_error"`
+	CountSuccess         int64 `json:"count_success"`
+	CountPanic           int64 `json:"count_panic"`
+	CountError           int64 `json:"count_error"`
+	CountJunk            int64 `json:"count_junk"`
+}
