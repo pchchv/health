@@ -39,3 +39,19 @@ func (s *testSink) EmitEventErr(job string, event string, inputErr error, kvs ma
 		s.LastErrRaw = true
 	}
 }
+
+func (s *testSink) EmitTiming(job string, event string, nanos int64, kvs map[string]string) {
+	s.LastEmitKind = "Timing"
+	s.LastJob = job
+	s.LastEvent = event
+	s.LastKvs = kvs
+	s.LastNanos = nanos
+}
+
+func (s *testSink) EmitGauge(job string, event string, value float64, kvs map[string]string) {
+	s.LastEmitKind = "Gauge"
+	s.LastJob = job
+	s.LastEvent = event
+	s.LastKvs = kvs
+	s.LastValue = value
+}
