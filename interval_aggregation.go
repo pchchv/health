@@ -66,3 +66,10 @@ func (ec *ErrorCounter) getErrorSamples() []error {
 	}
 	return ret
 }
+
+type aggregationMaps struct {
+	Timers    map[string]*TimerAggregation `json:"timers"`
+	Gauges    map[string]float64           `json:"gauges"`
+	Events    map[string]int64             `json:"events"`
+	EventErrs map[string]*ErrorCounter     `json:"event_errs"`
+}
