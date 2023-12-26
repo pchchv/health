@@ -1,6 +1,6 @@
 package health
 
-import "reflect"
+import "errors"
 
 type TimerAggregation struct {
 	Count           int64   `json:"count"`
@@ -41,7 +41,7 @@ func (ec *ErrorCounter) addError(inputErr error) {
 	lastErr := ec.errorSamples[ec.errorSampleIndex]
 	if lastErr == nil {
 		ec.errorSamples[ec.errorSampleIndex] = inputErr
-	} else if !reflect.DeepEqual(lastErr, inputErr) {
+	} else if !errors.Is(lastErr, inputErr) {
 		n := len(ec.errorSamples)
 		ec.errorSampleIndex = (ec.errorSampleIndex + 1) % n
 		ec.errorSamples[ec.errorSampleIndex] = inputErr
