@@ -55,3 +55,11 @@ func (s *testSink) EmitGauge(job string, event string, value float64, kvs map[st
 	s.LastKvs = kvs
 	s.LastValue = value
 }
+
+func (s *testSink) EmitComplete(job string, status CompletionStatus, nanos int64, kvs map[string]string) {
+	s.LastEmitKind = "Complete"
+	s.LastJob = job
+	s.LastKvs = kvs
+	s.LastNanos = nanos
+	s.LastStatus = status
+}
