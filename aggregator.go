@@ -13,3 +13,13 @@ type aggregator struct {
 	// intervals is a slice of the retained intervals
 	intervalAggregations []*IntervalAggregation
 }
+
+func newAggregator(intervalDuration time.Duration, retain time.Duration) *aggregator {
+	maxIntervals := int(retain / intervalDuration)
+	return &aggregator{
+		intervalDuration:     intervalDuration,
+		retain:               retain,
+		maxIntervals:         maxIntervals,
+		intervalAggregations: make([]*IntervalAggregation, 0, maxIntervals),
+	}
+}
