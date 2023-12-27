@@ -71,6 +71,24 @@ func (a *aggregator) EmitEventErr(job string, event string, inputErr error) {
 	intAgg.SerialNumber++
 }
 
+func (a *aggregator) EmitTiming(job string, event string, nanos int64) {
+	intAgg := a.getIntervalAggregation()
+	t := intAgg.getTimers(event)
+	t.ingest(nanos)
+	jobAgg := intAgg.getJobAggregation(job)
+	jt := jobAgg.getTimers(event)
+	jt.ingest(nanos)
+	intAgg.SerialNumber++
+}
+
+func (a *aggregator) EmitGauge(job string, event string, value float64) {
+	intAgg := a.getIntervalAggregation()
+	intAgg.Gauges[event] = value
+	jobAgg := intAgg.getJobAggregation(job)
+	jobAgg.Gauges[event] = value
+	intAgg.SerialNumber++
+}
+
 func now() time.Time {
 	if nowMock.IsZero() {
 		return time.Now()
