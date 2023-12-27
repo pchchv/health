@@ -43,3 +43,13 @@ func (intoAm *aggregationMaps) merge(fromAm *aggregationMaps) {
 		}
 	}
 }
+
+func (intoJob *JobAggregation) merge(fromJob *JobAggregation) {
+	intoJob.aggregationMaps.merge(&fromJob.aggregationMaps)
+	intoJob.TimerAggregation.merge(&fromJob.TimerAggregation)
+	intoJob.CountSuccess += fromJob.CountSuccess
+	intoJob.CountValidationError += fromJob.CountValidationError
+	intoJob.CountPanic += fromJob.CountPanic
+	intoJob.CountError += fromJob.CountError
+	intoJob.CountJunk += fromJob.CountJunk
+}
