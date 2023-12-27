@@ -1,7 +1,6 @@
 package health
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -33,7 +32,7 @@ func assertAggregationData(t *testing.T, intAgg *IntervalAggregation) {
 
 	// Spot-check event-errs:
 	assert.EqualValues(t, 1, intAgg.EventErrs["err0"].Count)
-	assert.Equal(t, []error{errors.New("wat")}, intAgg.EventErrs["err0"].getErrorSamples())
+	assert.Equal(t, []error{fmt.Errorf("wat")}, intAgg.EventErrs["err0"].getErrorSamples())
 
 	// Spot-check jobs:
 	job := intAgg.Jobs["job0"]
@@ -46,7 +45,7 @@ func assertAggregationData(t *testing.T, intAgg *IntervalAggregation) {
 	assert.EqualValues(t, 1, job.Timers["timing0"].Count)
 	assert.EqualValues(t, 12, job.Timers["timing0"].NanosSum)
 	assert.EqualValues(t, 1, job.EventErrs["err0"].Count)
-	assert.Equal(t, []error{errors.New("wat")}, job.EventErrs["err0"].getErrorSamples())
+	assert.Equal(t, []error{fmt.Errorf("wat")}, job.EventErrs["err0"].getErrorSamples())
 
 	// Nothing foo or bar related
 	_, ok := intAgg.Jobs["foo"]
@@ -91,7 +90,7 @@ func aggregatorWithData() *aggregator {
 	for i := 0; i < 1200; i++ {
 		eventErrs = append(eventErrs, eventErr{
 			event: fmt.Sprintf("err%d", i),
-			err:   errors.New("wat"),
+			err:   fmt.Errorf("wat"),
 		})
 	}
 
