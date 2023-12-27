@@ -1,5 +1,19 @@
 package health
 
+// Merge merges intAgg into ia, mutating ia.
+// Requires that ia and intAgg are a fully valid with no nil maps.
+func (ia *IntervalAggregation) Merge(intAgg *IntervalAggregation) {
+	ia.aggregationMaps.merge(&intAgg.aggregationMaps)
+	for k, v := range intAgg.Jobs {
+		if existingJob, ok := ia.Jobs[k]; ok {
+			existingJob.merge(v)
+		} else {
+			ia.Jobs[k] = v.Clone()
+		}
+	}
+	ia.SerialNumber++
+}
+
 func (intoTa *TimerAggregation) merge(fromTa *TimerAggregation) {
 	intoTa.Count += fromTa.Count
 	intoTa.NanosSum += fromTa.NanosSum
