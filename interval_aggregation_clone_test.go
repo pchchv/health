@@ -13,6 +13,26 @@ type eventErr struct {
 	err   error
 }
 
+func TestClone(t *testing.T) {
+	setNowMock("2011-09-09T23:36:13Z")
+	defer resetNowMock()
+
+	a := aggregatorWithData()
+	intAgg := a.intervalAggregations[0]
+	assertAggregationData(t, intAgg)
+	clonedAgg := intAgg.Clone()
+	assertAggregationData(t, clonedAgg)
+	// Let's add some data to intAgg and make sure it doesn't propagate to clonedAgg
+	a.EmitEvent("foo", "bar")
+	a.EmitTiming("foo", "bar", 100)
+	a.EmitEventErr("foo", "bar", fmt.Errorf("hi"))
+	a.EmitGauge("foo", "bar", 3.14)
+	a.EmitComplete("foo", Error, 99)
+
+	assert.Equal(t, 301, len(intAgg.Jobs))
+	assertAggregationData(t, clonedAgg)
+}
+
 func assertAggregationData(t *testing.T, intAgg *IntervalAggregation) {
 	assert.Equal(t, 300, len(intAgg.Jobs))
 	assert.Equal(t, 1200, len(intAgg.Events))
