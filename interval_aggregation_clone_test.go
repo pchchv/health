@@ -33,6 +33,19 @@ func TestClone(t *testing.T) {
 	assertAggregationData(t, clonedAgg)
 }
 
+func BenchmarkClone(b *testing.B) {
+	setNowMock("2011-09-09T23:36:13Z")
+	defer resetNowMock()
+
+	a := aggregatorWithData()
+	intAgg := a.intervalAggregations[0]
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		intAgg.Clone()
+	}
+}
+
 func assertAggregationData(t *testing.T, intAgg *IntervalAggregation) {
 	assert.Equal(t, 300, len(intAgg.Jobs))
 	assert.Equal(t, 1200, len(intAgg.Events))
