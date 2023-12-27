@@ -26,6 +26,24 @@ func newAggregator(intervalDuration time.Duration, retain time.Duration) *aggreg
 	}
 }
 
+func (a *aggregator) createIntervalAggregation(interval time.Time) *IntervalAggregation {
+	// Make new interval:
+	current := NewIntervalAggregation(interval)
+	// If we've reached our max intervals,
+	// and we're going to shift everything down,
+	// then set the last one
+	n := len(a.intervalAggregations)
+	if n == a.maxIntervals {
+		for i := 1; i < n; i++ {
+			a.intervalAggregations[i-1] = a.intervalAggregations[i]
+		}
+		a.intervalAggregations[n-1] = current
+	} else {
+		a.intervalAggregations = append(a.intervalAggregations, current)
+	}
+	return current
+}
+
 func now() time.Time {
 	if nowMock.IsZero() {
 		return time.Now()
