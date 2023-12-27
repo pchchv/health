@@ -11,3 +11,35 @@ func (intoTa *TimerAggregation) merge(fromTa *TimerAggregation) {
 		intoTa.NanosMax = fromTa.NanosMax
 	}
 }
+
+func (intoAm *aggregationMaps) merge(fromAm *aggregationMaps) {
+	for k, v := range fromAm.Events {
+		intoAm.Events[k] += v
+	}
+
+	for k, v := range fromAm.Gauges {
+		intoAm.Gauges[k] = v
+	}
+
+	for k, v := range fromAm.Timers {
+		if existingTimer, ok := intoAm.Timers[k]; ok {
+			existingTimer.merge(v)
+		} else {
+			intoAm.Timers[k] = v.Clone()
+		}
+	}
+
+	for k, v := range fromAm.EventErrs {
+		if existingErrCounter, ok := intoAm.EventErrs[k]; ok {
+			existingErrCounter.Count += v.Count
+			// merging two ring buffers given our shitty implementation is problematic
+			for _, err := range v.errorSamples {
+				if err != nil {
+					existingErrCounter.addError(err)
+				}
+			}
+		} else {
+			intoAm.EventErrs[k] = v.Clone()
+		}
+	}
+}
