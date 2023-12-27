@@ -53,6 +53,24 @@ func (a *aggregator) getIntervalAggregation() *IntervalAggregation {
 	return a.createIntervalAggregation(intervalStart)
 }
 
+func (a *aggregator) EmitEvent(job string, event string) {
+	intAgg := a.getIntervalAggregation()
+	intAgg.Events[event] = intAgg.Events[event] + 1
+	jobAgg := intAgg.getJobAggregation(job)
+	jobAgg.Events[event] = jobAgg.Events[event] + 1
+	intAgg.SerialNumber++
+}
+
+func (a *aggregator) EmitEventErr(job string, event string, inputErr error) {
+	intAgg := a.getIntervalAggregation()
+	errc := intAgg.getCounterErrs(event)
+	errc.incrementAndAddError(inputErr)
+	jobAgg := intAgg.getJobAggregation(job)
+	jerrc := jobAgg.getCounterErrs(event)
+	jerrc.incrementAndAddError(inputErr)
+	intAgg.SerialNumber++
+}
+
 func now() time.Time {
 	if nowMock.IsZero() {
 		return time.Now()
