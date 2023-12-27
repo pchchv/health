@@ -1,5 +1,7 @@
 package health
 
+import "time"
+
 const (
 	cmdKindEvent cmdKind = iota
 	cmdKindEventErr
@@ -18,4 +20,12 @@ type emitCmd struct {
 	Nanos  int64
 	Value  float64
 	Status CompletionStatus
+}
+
+type JsonPollingSink struct {
+	intervalDuration  time.Duration
+	cmdChan           chan *emitCmd
+	doneChan          chan int
+	doneDoneChan      chan int
+	intervalsChanChan chan chan []*IntervalAggregation
 }
