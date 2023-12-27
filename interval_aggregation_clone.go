@@ -30,3 +30,17 @@ func (am *aggregationMaps) Clone() *aggregationMaps {
 	}
 	return dup
 }
+
+func (ja *JobAggregation) Clone() *JobAggregation {
+	dup := &JobAggregation{
+		CountSuccess:         ja.CountSuccess,
+		CountValidationError: ja.CountValidationError,
+		CountPanic:           ja.CountPanic,
+		CountError:           ja.CountError,
+		CountJunk:            ja.CountJunk,
+	}
+
+	dup.aggregationMaps = *ja.aggregationMaps.Clone()
+	dup.TimerAggregation = ja.TimerAggregation
+	return dup
+}
