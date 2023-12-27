@@ -149,3 +149,15 @@ func now() time.Time {
 	}
 	return nowMock
 }
+
+func setNowMock(t string) {
+	var err error
+	nowMock, err = time.Parse(time.RFC3339, t)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func resetNowMock() {
+	nowMock = time.Time{}
+}
