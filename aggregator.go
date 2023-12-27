@@ -26,6 +26,40 @@ func newAggregator(intervalDuration time.Duration, retain time.Duration) *aggreg
 	}
 }
 
+func startAggregator(intervalDuration time.Duration, retain time.Duration, sink *JsonPollingSink) {
+	cmdChan := sink.cmdChan
+	doneChan := sink.doneChan
+	intervalsChanChan := sink.intervalsChanChan
+	ticker := time.Tick(1 * time.Second)
+
+	agg := newAggregator(intervalDuration, retain)
+
+AGGREGATE_LOOP:
+	for {
+		select {
+		case <-doneChan:
+			sink.doneDoneChan <- 1
+			break AGGREGATE_LOOP
+		case cmd := <-cmdChan:
+			if cmd.Kind == cmdKindEvent {
+				agg.EmitEvent(cmd.Job, cmd.Event)
+			} else if cmd.Kind == cmdKindEventErr {
+				agg.EmitEventErr(cmd.Job, cmd.Event, cmd.Err)
+			} else if cmd.Kind == cmdKindTiming {
+				agg.EmitTiming(cmd.Job, cmd.Event, cmd.Nanos)
+			} else if cmd.Kind == cmdKindGauge {
+				agg.EmitGauge(cmd.Job, cmd.Event, cmd.Value)
+			} else if cmd.Kind == cmdKindComplete {
+				agg.EmitComplete(cmd.Job, cmd.Status, cmd.Nanos)
+			}
+		case <-ticker:
+			agg.getIntervalAggregation() // this has the side effect of sliding the interval window if necessary.
+		case intervalsChan := <-intervalsChanChan:
+			intervalsChan <- agg.memorySafeIntervals()
+		}
+	}
+}
+
 func (a *aggregator) createIntervalAggregation(interval time.Time) *IntervalAggregation {
 	// Make new interval:
 	current := NewIntervalAggregation(interval)
