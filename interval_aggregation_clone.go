@@ -44,3 +44,16 @@ func (ja *JobAggregation) Clone() *JobAggregation {
 	dup.TimerAggregation = ja.TimerAggregation
 	return dup
 }
+
+// Clone does a deep clone of ia, duplicating all maps and whatnot.
+func (ia *IntervalAggregation) Clone() *IntervalAggregation {
+	dup := &IntervalAggregation{}
+	dup.IntervalStart = ia.IntervalStart
+	dup.SerialNumber = ia.SerialNumber
+	dup.aggregationMaps = *ia.aggregationMaps.Clone()
+	dup.Jobs = make(map[string]*JobAggregation)
+	for k, v := range ia.Jobs {
+		dup.Jobs[k] = v.Clone()
+	}
+	return dup
+}
