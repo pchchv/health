@@ -96,6 +96,19 @@ func (a *aggregator) EmitComplete(job string, status CompletionStatus, nanos int
 	intAgg.SerialNumber++
 }
 
+func (a *aggregator) memorySafeIntervals() []*IntervalAggregation {
+	ret := make([]*IntervalAggregation, 0, len(a.intervalAggregations))
+	curAgg := a.getIntervalAggregation()
+	for _, intAgg := range a.intervalAggregations {
+		if intAgg == curAgg {
+			ret = append(ret, intAgg.Clone())
+		} else {
+			ret = append(ret, intAgg)
+		}
+	}
+	return ret
+}
+
 func now() time.Time {
 	if nowMock.IsZero() {
 		return time.Now()
