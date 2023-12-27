@@ -1,6 +1,9 @@
 package health
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 type TimerAggregation struct {
 	Count           int64   `json:"count"`
@@ -123,4 +126,19 @@ func (a *JobAggregation) ingest(status CompletionStatus, nanos int64) {
 	case Junk:
 		a.CountJunk++
 	}
+}
+
+// IntervalAggregation will hold data for a given aggregation interval.
+type IntervalAggregation struct {
+	// aggregationMaps will hold event/timer information that is not nested per-job.
+	aggregationMaps
+	// The start time of the interval
+	IntervalStart time.Time `json:"interval_start"`
+	// SerialNumber increments every time the aggregation changes.
+	// It does not increment if the aggregation does not change.
+	SerialNumber int64 `json:"serial_number"`
+	// Jobs hold a map of job name -> data about that job.
+	// This includes both primary-job information (success vs error, et all) as well as
+	// scoping timers/counters by the job.
+	Jobs map[string]*JobAggregation `json:"jobs"`
 }
