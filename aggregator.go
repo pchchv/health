@@ -89,6 +89,13 @@ func (a *aggregator) EmitGauge(job string, event string, value float64) {
 	intAgg.SerialNumber++
 }
 
+func (a *aggregator) EmitComplete(job string, status CompletionStatus, nanos int64) {
+	intAgg := a.getIntervalAggregation()
+	jobAgg := intAgg.getJobAggregation(job)
+	jobAgg.ingest(status, nanos)
+	intAgg.SerialNumber++
+}
+
 func now() time.Time {
 	if nowMock.IsZero() {
 		return time.Now()
