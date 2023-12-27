@@ -2,6 +2,8 @@ package health
 
 import "time"
 
+var nowMock time.Time
+
 type aggregator struct {
 	// How long is each aggregation interval. Eg, 1 minute
 	intervalDuration time.Duration
@@ -22,4 +24,11 @@ func newAggregator(intervalDuration time.Duration, retain time.Duration) *aggreg
 		maxIntervals:         maxIntervals,
 		intervalAggregations: make([]*IntervalAggregation, 0, maxIntervals),
 	}
+}
+
+func now() time.Time {
+	if nowMock.IsZero() {
+		return time.Now()
+	}
+	return nowMock
 }
