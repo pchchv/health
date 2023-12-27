@@ -151,3 +151,13 @@ func NewIntervalAggregation(intervalStart time.Time) *IntervalAggregation {
 	intAgg.initAggregationMaps()
 	return intAgg
 }
+
+func (ia *IntervalAggregation) getJobAggregation(job string) *JobAggregation {
+	jobAgg := ia.Jobs[job]
+	if jobAgg == nil {
+		jobAgg = &JobAggregation{}
+		jobAgg.initAggregationMaps()
+		ia.Jobs[job] = jobAgg
+	}
+	return jobAgg
+}
