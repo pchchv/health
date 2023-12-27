@@ -142,3 +142,12 @@ type IntervalAggregation struct {
 	// scoping timers/counters by the job.
 	Jobs map[string]*JobAggregation `json:"jobs"`
 }
+
+func NewIntervalAggregation(intervalStart time.Time) *IntervalAggregation {
+	intAgg := &IntervalAggregation{
+		IntervalStart: intervalStart,
+		Jobs:          make(map[string]*JobAggregation),
+	}
+	intAgg.initAggregationMaps()
+	return intAgg
+}
