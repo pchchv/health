@@ -44,6 +44,15 @@ func (a *aggregator) createIntervalAggregation(interval time.Time) *IntervalAggr
 	return current
 }
 
+func (a *aggregator) getIntervalAggregation() *IntervalAggregation {
+	intervalStart := now().Truncate(a.intervalDuration)
+	n := len(a.intervalAggregations)
+	if n > 0 && a.intervalAggregations[n-1].IntervalStart == intervalStart {
+		return a.intervalAggregations[n-1]
+	}
+	return a.createIntervalAggregation(intervalStart)
+}
+
 func now() time.Time {
 	if nowMock.IsZero() {
 		return time.Now()
