@@ -69,3 +69,9 @@ func (s *JsonPollingSink) EmitGauge(job string, event string, value float64, kvs
 func (s *JsonPollingSink) EmitComplete(job string, status CompletionStatus, nanos int64, kvs map[string]string) {
 	s.cmdChan <- &emitCmd{Kind: cmdKindComplete, Job: job, Status: status, Nanos: nanos}
 }
+
+func (s *JsonPollingSink) GetMetrics() []*IntervalAggregation {
+	intervalsChan := make(chan []*IntervalAggregation)
+	s.intervalsChanChan <- intervalsChan
+	return <-intervalsChan
+}
