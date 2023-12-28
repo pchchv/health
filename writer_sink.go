@@ -54,6 +54,21 @@ func (s *WriterSink) EmitEventErr(job string, event string, inputErr error, kvs 
 	s.Writer.Write(b.Bytes())
 }
 
+func (s *WriterSink) EmitTiming(job string, event string, nanos int64, kvs map[string]string) {
+	var b bytes.Buffer
+	b.WriteRune('[')
+	b.WriteString(timestamp())
+	b.WriteString("]: job:")
+	b.WriteString(job)
+	b.WriteString(" event:")
+	b.WriteString(event)
+	b.WriteString(" time:")
+	writeNanoseconds(&b, nanos)
+	writeMapConsistently(&b, kvs)
+	b.WriteRune('\n')
+	s.Writer.Write(b.Bytes())
+}
+
 func timestamp() string {
 	return time.Now().UTC().Format(time.RFC3339Nano)
 }
