@@ -1,6 +1,9 @@
 package health
 
-import "io"
+import (
+	"io"
+	"time"
+)
 
 // This sink writes bytes in a format that a human might like to read in a logfile
 // This can be used to log to Stdout:
@@ -18,4 +21,8 @@ import "io"
 //	.AddSink(&WriterSink{w})
 type WriterSink struct {
 	io.Writer
+}
+
+func timestamp() string {
+	return time.Now().UTC().Format(time.RFC3339Nano)
 }
