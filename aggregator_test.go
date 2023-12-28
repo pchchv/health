@@ -112,3 +112,54 @@ func TestEmitEventErr(t *testing.T) {
 	assert.EqualValues(t, 3, ce.Count)
 	assert.Equal(t, []error{errors.New("wat"), errors.New("lol")}, ce.getErrorSamples()) // new error added
 }
+
+func TestEmitTiming(t *testing.T) {
+	setNowMock("2011-09-09T23:36:13Z")
+	defer resetNowMock()
+	a := newAggregator(time.Minute, time.Minute*5)
+	a.EmitTiming("foo", "bar", 100)
+
+	assert.Equal(t, 1, len(a.intervalAggregations))
+
+	intAgg := a.intervalAggregations[0]
+	assert.NotNil(t, intAgg.Timers)
+	assert.EqualValues(t, 1, intAgg.SerialNumber)
+	tAgg := intAgg.Timers["bar"]
+	assert.NotNil(t, tAgg)
+	assert.EqualValues(t, 1, tAgg.Count)
+	assert.EqualValues(t, 100, tAgg.NanosSum)
+	assert.EqualValues(t, 10000, tAgg.NanosSumSquares)
+	assert.EqualValues(t, 100, tAgg.NanosMin)
+	assert.EqualValues(t, 100, tAgg.NanosMax)
+
+	assert.NotNil(t, intAgg.Jobs)
+	jobAgg := intAgg.Jobs["foo"]
+	assert.NotNil(t, jobAgg)
+	assert.NotNil(t, jobAgg.Timers)
+	tAgg = jobAgg.Timers["bar"]
+	assert.EqualValues(t, 1, tAgg.Count)
+	assert.EqualValues(t, 100, tAgg.NanosSum)
+	assert.EqualValues(t, 10000, tAgg.NanosSumSquares)
+	assert.EqualValues(t, 100, tAgg.NanosMin)
+	assert.EqualValues(t, 100, tAgg.NanosMax)
+
+	// Another timing:
+	a.EmitTiming("baz", "bar", 9) // note: diff job
+
+	intAgg = a.intervalAggregations[0]
+	tAgg = intAgg.Timers["bar"]
+	assert.NotNil(t, tAgg)
+	assert.EqualValues(t, 2, tAgg.Count)
+	assert.EqualValues(t, 109, tAgg.NanosSum)
+	assert.EqualValues(t, 10081, tAgg.NanosSumSquares)
+	assert.EqualValues(t, 9, tAgg.NanosMin)
+	assert.EqualValues(t, 100, tAgg.NanosMax)
+
+	jobAgg = intAgg.Jobs["baz"]
+	tAgg = jobAgg.Timers["bar"]
+	assert.EqualValues(t, 1, tAgg.Count)
+	assert.EqualValues(t, 9, tAgg.NanosSum)
+	assert.EqualValues(t, 81, tAgg.NanosSumSquares)
+	assert.EqualValues(t, 9, tAgg.NanosMin)
+	assert.EqualValues(t, 9, tAgg.NanosMax)
+}
