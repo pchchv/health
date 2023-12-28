@@ -2,6 +2,7 @@ package health
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"sort"
 	"time"
@@ -53,4 +54,15 @@ func writeMapConsistently(b *bytes.Buffer, kvs map[string]string) {
 		}
 	}
 	b.WriteRune(']')
+}
+
+func writeNanoseconds(b *bytes.Buffer, nanos int64) {
+	switch {
+	case nanos > 2000000:
+		fmt.Fprintf(b, "%d ms", nanos/1000000)
+	case nanos > 2000:
+		fmt.Fprintf(b, "%d μs", nanos/1000)
+	default:
+		fmt.Fprintf(b, "%d ns", nanos)
+	}
 }
