@@ -200,3 +200,32 @@ func TestEmitGauge(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, 3.14, v)
 }
+
+func TestEmitComplete(t *testing.T) {
+	setNowMock("2011-09-09T23:36:13Z")
+	defer resetNowMock()
+	a := newAggregator(time.Minute, time.Minute*5)
+	a.EmitComplete("foo", Success, 100)
+	a.EmitComplete("foo", ValidationError, 5)
+	a.EmitComplete("foo", Panic, 9)
+	a.EmitComplete("foo", Error, 7)
+	a.EmitComplete("foo", Junk, 11)
+
+	assert.Equal(t, 1, len(a.intervalAggregations))
+
+	intAgg := a.intervalAggregations[0]
+	assert.EqualValues(t, 5, intAgg.SerialNumber)
+	jobAgg := intAgg.Jobs["foo"]
+	assert.NotNil(t, jobAgg)
+
+	assert.EqualValues(t, 5, jobAgg.Count)
+	assert.EqualValues(t, 1, jobAgg.CountSuccess)
+	assert.EqualValues(t, 1, jobAgg.CountValidationError)
+	assert.EqualValues(t, 1, jobAgg.CountPanic)
+	assert.EqualValues(t, 1, jobAgg.CountError)
+	assert.EqualValues(t, 1, jobAgg.CountJunk)
+	assert.EqualValues(t, 132, jobAgg.NanosSum)
+	assert.EqualValues(t, 10276, jobAgg.NanosSumSquares)
+	assert.EqualValues(t, 5, jobAgg.NanosMin)
+	assert.EqualValues(t, 100, jobAgg.NanosMax)
+}
