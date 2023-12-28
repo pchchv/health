@@ -49,3 +49,11 @@ func (s *JsonPollingSink) ShutdownServer() {
 	s.doneChan <- 1
 	<-s.doneDoneChan
 }
+
+func (s *JsonPollingSink) EmitEvent(job string, event string, kvs map[string]string) {
+	s.cmdChan <- &emitCmd{Kind: cmdKindEvent, Job: job, Event: event}
+}
+
+func (s *JsonPollingSink) EmitEventErr(job string, event string, inputErr error, kvs map[string]string) {
+	s.cmdChan <- &emitCmd{Kind: cmdKindEventErr, Job: job, Event: event, Err: inputErr}
+}
