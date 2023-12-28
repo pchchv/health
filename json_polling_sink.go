@@ -29,3 +29,18 @@ type JsonPollingSink struct {
 	doneDoneChan      chan int
 	intervalsChanChan chan chan []*IntervalAggregation
 }
+
+func NewJsonPollingSink(intervalDuration time.Duration, retain time.Duration) *JsonPollingSink {
+	const buffSize = 4096 // random-ass-guess
+	s := &JsonPollingSink{
+		intervalDuration:  intervalDuration,
+		cmdChan:           make(chan *emitCmd, buffSize),
+		doneChan:          make(chan int),
+		doneDoneChan:      make(chan int),
+		intervalsChanChan: make(chan chan []*IntervalAggregation),
+	}
+
+	go startAggregator(intervalDuration, retain, s)
+
+	return s
+}
