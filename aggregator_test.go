@@ -229,3 +229,53 @@ func TestEmitComplete(t *testing.T) {
 	assert.EqualValues(t, 5, jobAgg.NanosMin)
 	assert.EqualValues(t, 100, jobAgg.NanosMax)
 }
+
+func TestRotation(t *testing.T) {
+	defer resetNowMock()
+	a := newAggregator(time.Minute, time.Minute*5)
+	setNowMock("2011-09-09T23:36:13Z")
+	a.EmitEvent("foo", "bar")
+
+	setNowMock("2011-09-09T23:37:13Z")
+	a.EmitEvent("foo", "bar")
+	a.EmitEvent("foo", "bar")
+
+	setNowMock("2011-09-09T23:38:13Z")
+	a.EmitEvent("foo", "bar")
+	a.EmitEvent("foo", "bar")
+	a.EmitEvent("foo", "bar")
+
+	setNowMock("2011-09-09T23:39:13Z")
+	a.EmitEvent("foo", "bar")
+	a.EmitEvent("foo", "bar")
+	a.EmitEvent("foo", "bar")
+	a.EmitEvent("foo", "bar")
+
+	setNowMock("2011-09-09T23:40:13Z")
+	a.EmitEvent("foo", "bar")
+	a.EmitEvent("foo", "bar")
+	a.EmitEvent("foo", "bar")
+	a.EmitEvent("foo", "bar")
+	a.EmitEvent("foo", "bar")
+
+	assert.Equal(t, 5, len(a.intervalAggregations))
+
+	for i := 0; i < 5; i++ {
+		intAgg := a.intervalAggregations[i]
+		assert.EqualValues(t, i+1, intAgg.Events["bar"])
+	}
+
+	setNowMock("2011-09-09T23:41:13Z")
+	a.EmitEvent("foo", "ok")
+
+	assert.Equal(t, 5, len(a.intervalAggregations))
+
+	for i := 0; i < 4; i++ {
+		intAgg := a.intervalAggregations[i]
+		assert.EqualValues(t, i+2, intAgg.Events["bar"])
+	}
+	intAgg := a.intervalAggregations[4]
+	assert.EqualValues(t, 0, intAgg.Events["bar"])
+	assert.EqualValues(t, 1, intAgg.Events["ok"])
+
+}
