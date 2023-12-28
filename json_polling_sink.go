@@ -57,3 +57,11 @@ func (s *JsonPollingSink) EmitEvent(job string, event string, kvs map[string]str
 func (s *JsonPollingSink) EmitEventErr(job string, event string, inputErr error, kvs map[string]string) {
 	s.cmdChan <- &emitCmd{Kind: cmdKindEventErr, Job: job, Event: event, Err: inputErr}
 }
+
+func (s *JsonPollingSink) EmitTiming(job string, event string, nanos int64, kvs map[string]string) {
+	s.cmdChan <- &emitCmd{Kind: cmdKindTiming, Job: job, Event: event, Nanos: nanos}
+}
+
+func (s *JsonPollingSink) EmitGauge(job string, event string, value float64, kvs map[string]string) {
+	s.cmdChan <- &emitCmd{Kind: cmdKindGauge, Job: job, Event: event, Value: value}
+}
