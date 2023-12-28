@@ -36,3 +36,13 @@ func TestJsonPollingSinkServerSuccess(t *testing.T) {
 	assert.Equal(t, 1, len(resp.IntervalAggregations))
 	assert.Equal(t, map[string]int64{"myevent": 1}, resp.IntervalAggregations[0].Events)
 }
+
+func TestJsonPollingSinkServerNotFound(t *testing.T) {
+	sink := NewJsonPollingSink(time.Minute, time.Minute*5)
+	defer sink.ShutdownServer()
+
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/wat", nil)
+	sink.ServeHTTP(recorder, request)
+	assert.Equal(t, 404, recorder.Code)
+}
