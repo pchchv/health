@@ -44,3 +44,8 @@ func NewJsonPollingSink(intervalDuration time.Duration, retain time.Duration) *J
 
 	return s
 }
+
+func (s *JsonPollingSink) ShutdownServer() {
+	s.doneChan <- 1
+	<-s.doneDoneChan
+}
