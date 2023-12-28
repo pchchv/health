@@ -1,6 +1,7 @@
 package health
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -14,6 +15,26 @@ type HealthAggregationsResponse struct {
 
 func (s *JsonPollingSink) StartServer(addr string) {
 	go http.ListenAndServe(addr, s)
+}
+
+func (s *JsonPollingSink) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if r.URL.Path == "/health" {
+		metrics := s.GetMetrics()
+		response := &HealthAggregationsResponse{
+			InstanceId:           Identifier,
+			IntervalDuration:     s.intervalDuration,
+			IntervalAggregations: metrics,
+		}
+		jsonData, err := json.MarshalIndent(response, "", "\t")
+		if err != nil {
+			renderError(rw, err)
+			return
+		}
+		fmt.Fprintf(rw, string(jsonData))
+	} else {
+		renderNotFound(rw)
+	}
 }
 
 func renderNotFound(rw http.ResponseWriter) {
