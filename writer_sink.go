@@ -1,7 +1,9 @@
 package health
 
 import (
+	"bytes"
 	"io"
+	"sort"
 	"time"
 )
 
@@ -25,4 +27,30 @@ type WriterSink struct {
 
 func timestamp() string {
 	return time.Now().UTC().Format(time.RFC3339Nano)
+}
+
+func writeMapConsistently(b *bytes.Buffer, kvs map[string]string) {
+	if kvs == nil {
+		return
+	}
+
+	keys := make([]string, 0, len(kvs))
+	for k := range kvs {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+	keysLenMinusOne := len(keys) - 1
+
+	b.WriteString(" kvs:[")
+	for i, k := range keys {
+		b.WriteString(k)
+		b.WriteRune(':')
+		b.WriteString(kvs[k])
+
+		if i != keysLenMinusOne {
+			b.WriteRune(' ')
+		}
+	}
+	b.WriteRune(']')
 }
