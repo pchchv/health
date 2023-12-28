@@ -26,6 +26,34 @@ type WriterSink struct {
 	io.Writer
 }
 
+func (s *WriterSink) EmitEvent(job string, event string, kvs map[string]string) {
+	var b bytes.Buffer
+	b.WriteRune('[')
+	b.WriteString(timestamp())
+	b.WriteString("]: job:")
+	b.WriteString(job)
+	b.WriteString(" event:")
+	b.WriteString(event)
+	writeMapConsistently(&b, kvs)
+	b.WriteRune('\n')
+	s.Writer.Write(b.Bytes())
+}
+
+func (s *WriterSink) EmitEventErr(job string, event string, inputErr error, kvs map[string]string) {
+	var b bytes.Buffer
+	b.WriteRune('[')
+	b.WriteString(timestamp())
+	b.WriteString("]: job:")
+	b.WriteString(job)
+	b.WriteString(" event:")
+	b.WriteString(event)
+	b.WriteString(" err:")
+	b.WriteString(inputErr.Error())
+	writeMapConsistently(&b, kvs)
+	b.WriteRune('\n')
+	s.Writer.Write(b.Bytes())
+}
+
 func timestamp() string {
 	return time.Now().UTC().Format(time.RFC3339Nano)
 }
