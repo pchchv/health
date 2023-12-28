@@ -65,3 +65,7 @@ func (s *JsonPollingSink) EmitTiming(job string, event string, nanos int64, kvs 
 func (s *JsonPollingSink) EmitGauge(job string, event string, value float64, kvs map[string]string) {
 	s.cmdChan <- &emitCmd{Kind: cmdKindGauge, Job: job, Event: event, Value: value}
 }
+
+func (s *JsonPollingSink) EmitComplete(job string, status CompletionStatus, nanos int64, kvs map[string]string) {
+	s.cmdChan <- &emitCmd{Kind: cmdKindComplete, Job: job, Status: status, Nanos: nanos}
+}
