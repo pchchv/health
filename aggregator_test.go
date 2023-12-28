@@ -15,3 +15,58 @@ func TestNewAggregator(t *testing.T) {
 	assert.Equal(t, 0, len(a.intervalAggregations))
 	assert.NotNil(t, a.intervalAggregations)
 }
+
+func TestEmitEvent(t *testing.T) {
+	// Set time, and do a single event
+	setNowMock("2011-09-09T23:36:13Z")
+	defer resetNowMock()
+	a := newAggregator(time.Minute, time.Minute*5)
+	a.EmitEvent("foo", "bar")
+
+	assert.Equal(t, 1, len(a.intervalAggregations))
+
+	intAgg := a.intervalAggregations[0]
+	assert.NotNil(t, intAgg.Events)
+	assert.EqualValues(t, 1, intAgg.Events["bar"])
+	assert.EqualValues(t, 1, intAgg.SerialNumber)
+
+	assert.NotNil(t, intAgg.Jobs)
+	jobAgg := intAgg.Jobs["foo"]
+	assert.NotNil(t, jobAgg)
+	assert.NotNil(t, jobAgg.Events)
+	assert.EqualValues(t, 1, jobAgg.Events["bar"])
+
+	// Now, without changing the time, we'll do 3 more events:
+	a.EmitEvent("foo", "bar") // duplicate to above
+	a.EmitEvent("foo", "baz") // same job, diff event
+	a.EmitEvent("wat", "bar") // diff job, same event
+
+	assert.Equal(t, 1, len(a.intervalAggregations))
+
+	intAgg = a.intervalAggregations[0]
+	assert.EqualValues(t, 3, intAgg.Events["bar"])
+	assert.EqualValues(t, 4, intAgg.SerialNumber)
+
+	jobAgg = intAgg.Jobs["foo"]
+	assert.EqualValues(t, 2, jobAgg.Events["bar"])
+	assert.EqualValues(t, 1, jobAgg.Events["baz"])
+
+	jobAgg = intAgg.Jobs["wat"]
+	assert.NotNil(t, jobAgg)
+	assert.EqualValues(t, 1, jobAgg.Events["bar"])
+
+	// increment time and do one more event:
+	setNowMock("2011-09-09T23:37:01Z")
+	a.EmitEvent("foo", "bar")
+
+	assert.Equal(t, 2, len(a.intervalAggregations))
+
+	// make sure old values don't change:
+	intAgg = a.intervalAggregations[0]
+	assert.EqualValues(t, 3, intAgg.Events["bar"])
+	assert.EqualValues(t, 4, intAgg.SerialNumber)
+
+	intAgg = a.intervalAggregations[1]
+	assert.EqualValues(t, 1, intAgg.Events["bar"])
+	assert.EqualValues(t, 1, intAgg.SerialNumber)
+}
