@@ -14,6 +14,7 @@ var (
 	basicEventRegexp    = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+)")
 	basicEventErrRegexp = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) err:(.+)")
 	kvsEventRegexp      = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) kvs:\\[(.+)\\]")
+	kvsEventErrRegexp   = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) err:(.+) kvs:\\[(.+)\\]")
 )
 
 func TestWriterSinkEmitEventBasic(t *testing.T) {
@@ -55,4 +56,19 @@ func TestWriterSinkEmitEventErrBasic(t *testing.T) {
 	assert.Equal(t, "myjob", result[1])
 	assert.Equal(t, "myevent", result[2])
 	assert.Equal(t, testErr.Error(), result[3])
+}
+
+func TestWriterSinkEmitEventErrKvs(t *testing.T) {
+	var b bytes.Buffer
+	sink := WriterSink{&b}
+	sink.EmitEventErr("myjob", "myevent", testErr, map[string]string{"wat": "ok", "another": "thing"})
+
+	str := b.String()
+
+	result := kvsEventErrRegexp.FindStringSubmatch(str)
+	assert.Equal(t, 5, len(result))
+	assert.Equal(t, "myjob", result[1])
+	assert.Equal(t, "myevent", result[2])
+	assert.Equal(t, testErr.Error(), result[3])
+	assert.Equal(t, "another:thing wat:ok", result[4])
 }
