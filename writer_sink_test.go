@@ -16,6 +16,7 @@ var (
 	basicTimingRegexp   = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) time:(.+)")
 	kvsEventRegexp      = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) kvs:\\[(.+)\\]")
 	kvsEventErrRegexp   = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) err:(.+) kvs:\\[(.+)\\]")
+	kvsTimingRegexp     = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) time:(.+) kvs:\\[(.+)\\]")
 )
 
 func TestWriterSinkEmitEventBasic(t *testing.T) {
@@ -86,4 +87,19 @@ func TestWriterSinkEmitTimingBasic(t *testing.T) {
 	assert.Equal(t, "myjob", result[1])
 	assert.Equal(t, "myevent", result[2])
 	assert.Equal(t, "1204 μs", result[3])
+}
+
+func TestWriterSinkEmitTimingKvs(t *testing.T) {
+	var b bytes.Buffer
+	sink := WriterSink{&b}
+	sink.EmitTiming("myjob", "myevent", 34567890, map[string]string{"wat": "ok", "another": "thing"})
+
+	str := b.String()
+
+	result := kvsTimingRegexp.FindStringSubmatch(str)
+	assert.Equal(t, 5, len(result))
+	assert.Equal(t, "myjob", result[1])
+	assert.Equal(t, "myevent", result[2])
+	assert.Equal(t, "34 ms", result[3])
+	assert.Equal(t, "another:thing wat:ok", result[4])
 }
