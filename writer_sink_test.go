@@ -10,15 +10,17 @@ import (
 )
 
 var (
-	testErr             = errors.New("test error")
-	basicEventRegexp    = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+)")
-	basicEventErrRegexp = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) err:(.+)")
-	basicTimingRegexp   = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) time:(.+)")
-	basicGaugeRegexp    = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) gauge:(.+)")
-	kvsEventRegexp      = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) kvs:\\[(.+)\\]")
-	kvsEventErrRegexp   = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) err:(.+) kvs:\\[(.+)\\]")
-	kvsTimingRegexp     = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) time:(.+) kvs:\\[(.+)\\]")
-	kvsGaugeRegexp      = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) gauge:(.+) kvs:\\[(.+)\\]")
+	testErr               = errors.New("test error")
+	basicEventRegexp      = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+)")
+	basicEventErrRegexp   = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) err:(.+)")
+	basicTimingRegexp     = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) time:(.+)")
+	basicGaugeRegexp      = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) gauge:(.+)")
+	basicCompletionRegexp = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) status:(.+) time:(.+)")
+	kvsEventRegexp        = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) kvs:\\[(.+)\\]")
+	kvsEventErrRegexp     = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) err:(.+) kvs:\\[(.+)\\]")
+	kvsTimingRegexp       = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) time:(.+) kvs:\\[(.+)\\]")
+	kvsGaugeRegexp        = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) gauge:(.+) kvs:\\[(.+)\\]")
+	kvsCompletionRegexp   = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) status:(.+) time:(.+) kvs:\\[(.+)\\]")
 )
 
 func TestWriterSinkEmitEventBasic(t *testing.T) {
@@ -133,4 +135,37 @@ func TestWriterSinkEmitGaugeKvs(t *testing.T) {
 	assert.Equal(t, "myevent", result[2])
 	assert.Equal(t, "0.11", result[3])
 	assert.Equal(t, "another:thing wat:ok", result[4])
+}
+
+func TestWriterSinkEmitCompleteBasic(t *testing.T) {
+	for kind, kindStr := range completionStatusToString {
+		var b bytes.Buffer
+		sink := WriterSink{&b}
+		sink.EmitComplete("myjob", kind, 1204000, nil)
+
+		str := b.String()
+
+		result := basicCompletionRegexp.FindStringSubmatch(str)
+		assert.Equal(t, 4, len(result))
+		assert.Equal(t, "myjob", result[1])
+		assert.Equal(t, kindStr, result[2])
+		assert.Equal(t, "1204 μs", result[3])
+	}
+}
+
+func TestWriterSinkEmitCompleteKvs(t *testing.T) {
+	for kind, kindStr := range completionStatusToString {
+		var b bytes.Buffer
+		sink := WriterSink{&b}
+		sink.EmitComplete("myjob", kind, 34567890, map[string]string{"wat": "ok", "another": "thing"})
+
+		str := b.String()
+
+		result := kvsCompletionRegexp.FindStringSubmatch(str)
+		assert.Equal(t, 5, len(result))
+		assert.Equal(t, "myjob", result[1])
+		assert.Equal(t, kindStr, result[2])
+		assert.Equal(t, "34 ms", result[3])
+		assert.Equal(t, "another:thing wat:ok", result[4])
+	}
 }
