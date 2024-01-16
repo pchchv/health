@@ -12,14 +12,14 @@ import (
 var (
 	testErr               = errors.New("test error")
 	basicEventRegexp      = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+)")
-	basicEventErrRegexp   = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) err:(.+)")
-	basicTimingRegexp     = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) time:(.+)")
-	basicGaugeRegexp      = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) gauge:(.+)")
-	basicCompletionRegexp = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) status:(.+) time:(.+)")
 	kvsEventRegexp        = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) kvs:\\[(.+)\\]")
+	basicEventErrRegexp   = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) err:(.+)")
 	kvsEventErrRegexp     = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) err:(.+) kvs:\\[(.+)\\]")
+	basicTimingRegexp     = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) time:(.+)")
 	kvsTimingRegexp       = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) time:(.+) kvs:\\[(.+)\\]")
+	basicGaugeRegexp      = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) gauge:(.+)")
 	kvsGaugeRegexp        = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) gauge:(.+) kvs:\\[(.+)\\]")
+	basicCompletionRegexp = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) status:(.+) time:(.+)")
 	kvsCompletionRegexp   = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) status:(.+) time:(.+) kvs:\\[(.+)\\]")
 )
 
