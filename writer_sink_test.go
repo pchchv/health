@@ -180,3 +180,14 @@ func BenchmarkWriterSinkEmitEvent(b *testing.B) {
 		sink.EmitEvent("myjob", "myevent", someKvs)
 	}
 }
+
+func BenchmarkWriterSinkEmitEventErr(b *testing.B) {
+	var by bytes.Buffer
+	someKvs := map[string]string{"foo": "bar", "qux": "dog"}
+	sink := WriterSink{&by}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		by.Reset()
+		sink.EmitEventErr("myjob", "myevent", testErr, someKvs)
+	}
+}
