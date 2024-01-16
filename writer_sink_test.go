@@ -2,6 +2,7 @@ package health
 
 import (
 	"bytes"
+	"errors"
 	"regexp"
 	"testing"
 
@@ -9,8 +10,10 @@ import (
 )
 
 var (
-	basicEventRegexp = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+)")
-	kvsEventRegexp   = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) kvs:\\[(.+)\\]")
+	testErr             = errors.New("test error")
+	basicEventRegexp    = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+)")
+	basicEventErrRegexp = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) err:(.+)")
+	kvsEventRegexp      = regexp.MustCompile("\\[[^\\]]+\\]: job:(.+) event:(.+) kvs:\\[(.+)\\]")
 )
 
 func TestWriterSinkEmitEventBasic(t *testing.T) {
@@ -38,4 +41,18 @@ func TestWriterSinkEmitEventKvs(t *testing.T) {
 	assert.Equal(t, "myjob", result[1])
 	assert.Equal(t, "myevent", result[2])
 	assert.Equal(t, "another:thing wat:ok", result[3])
+}
+
+func TestWriterSinkEmitEventErrBasic(t *testing.T) {
+	var b bytes.Buffer
+	sink := WriterSink{&b}
+	sink.EmitEventErr("myjob", "myevent", testErr, nil)
+
+	str := b.String()
+
+	result := basicEventErrRegexp.FindStringSubmatch(str)
+	assert.Equal(t, 4, len(result))
+	assert.Equal(t, "myjob", result[1])
+	assert.Equal(t, "myevent", result[2])
+	assert.Equal(t, testErr.Error(), result[3])
 }
