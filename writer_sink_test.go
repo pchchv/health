@@ -202,3 +202,14 @@ func BenchmarkWriterSinkEmitTiming(b *testing.B) {
 		sink.EmitTiming("myjob", "myevent", 234203, someKvs)
 	}
 }
+
+func BenchmarkWriterSinkEmitComplete(b *testing.B) {
+	var by bytes.Buffer
+	someKvs := map[string]string{"foo": "bar", "qux": "dog"}
+	sink := WriterSink{&by}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		by.Reset()
+		sink.EmitComplete("myjob", Success, 234203, someKvs)
+	}
+}
