@@ -77,6 +77,16 @@ type StatsDSink struct {
 	prefixBuffers map[eventKey]prefixBuffer
 }
 
+func (s *StatsDSink) Stop() {
+	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindStop}
+	<-s.stopDoneChan
+}
+
+func (s *StatsDSink) Drain() {
+	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindDrain}
+	<-s.drainDoneChan
+}
+
 func (s *StatsDSink) flush() {
 	if s.udpBuf.Len() > 0 {
 		s.udpConn.WriteToUDP(s.udpBuf.Bytes(), s.udpAddr)
