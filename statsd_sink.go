@@ -75,6 +75,26 @@ type StatsDSink struct {
 	prefixBuffers map[eventKey]prefixBuffer
 }
 
+func (s *StatsDSink) flush() {
+	if s.udpBuf.Len() > 0 {
+		s.udpConn.WriteToUDP(s.udpBuf.Bytes(), s.udpAddr)
+		s.udpBuf.Truncate(0)
+	}
+}
+
+func (s *StatsDSink) writeSanitizedKeys(b *bytes.Buffer, keys ...string) {
+	needDot := false
+	for _, k := range keys {
+		if k != "" {
+			if needDot {
+				b.WriteByte('.')
+			}
+			s.options.SanitizationFunc(b, k)
+			needDot = true
+		}
+	}
+}
+
 func sanitizeKey(b *bytes.Buffer, s string) {
 	b.Grow(len(s) + 1)
 	for i := 0; i < len(s); i++ {
