@@ -103,6 +103,10 @@ func (s *StatsDSink) EmitGauge(job string, event string, value float64, kvs map[
 	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindGauge, Job: job, Event: event, Value: value}
 }
 
+func (s *StatsDSink) EmitComplete(job string, status CompletionStatus, nanos int64, kvs map[string]string) {
+	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindComplete, Job: job, Status: status, Nanos: nanos}
+}
+
 func (s *StatsDSink) flush() {
 	if s.udpBuf.Len() > 0 {
 		s.udpConn.WriteToUDP(s.udpBuf.Bytes(), s.udpAddr)
