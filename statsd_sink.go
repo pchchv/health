@@ -1,6 +1,10 @@
 package health
 
-import "bytes"
+import (
+	"bytes"
+	"net"
+	"time"
+)
 
 const (
 	statsdCmdKindStop statsdCmdKind = iota
@@ -53,6 +57,22 @@ type statsdEmitCmd struct {
 	Nanos  int64
 	Value  float64
 	Status CompletionStatus
+}
+
+type StatsDSink struct {
+	options       StatsDSinkOptions
+	cmdChan       chan statsdEmitCmd
+	drainDoneChan chan struct{}
+	stopDoneChan  chan struct{}
+	flushPeriod   time.Duration
+	udpBuf        bytes.Buffer
+	timingBuf     []byte
+	udpConn       *net.UDPConn
+	udpAddr       *net.UDPAddr
+	// map of {job,event,suffix} to a re-usable buffer prefixed with the key.
+	// Since each timing/gauge has a unique component (the time), we'll truncate to the prefix, write the timing,
+	// and write the statsD suffix (eg, "|ms\n"). Then copy that to the UDP buffer.
+	prefixBuffers map[eventKey]prefixBuffer
 }
 
 func sanitizeKey(b *bytes.Buffer, s string) {
