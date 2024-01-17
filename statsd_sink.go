@@ -9,3 +9,8 @@ type eventKey struct {
 	event  string
 	suffix string
 }
+
+type prefixBuffer struct {
+	*bytes.Buffer
+	prefixLen int
+}
