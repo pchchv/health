@@ -176,7 +176,6 @@ func (s *StatsDSink) processEventErr(job string, event string) {
 
 func (s *StatsDSink) processTiming(job string, event string, nanos int64) {
 	s.writeNanosToTimingBuf(nanos)
-
 	if !s.options.SkipTopLevelEvents {
 		pb := s.getPrefixBuffer("", event, "")
 		pb.Write(s.timingBuf)
@@ -190,6 +189,39 @@ func (s *StatsDSink) processTiming(job string, event string, nanos int64) {
 		pb.WriteString("|ms\n")
 		s.writeStatsDMetric(pb.Bytes())
 	}
+}
+
+func (s *StatsDSink) processGauge(job string, event string, value float64) {
+	s.timingBuf = s.timingBuf[0:0]
+	prec := 2
+	if (value < 0.1) && (value > -0.1) {
+		prec = -1
+	}
+
+	s.timingBuf = strconv.AppendFloat(s.timingBuf, value, 'f', prec, 64)
+
+	if !s.options.SkipTopLevelEvents {
+		pb := s.getPrefixBuffer("", event, "")
+		pb.Write(s.timingBuf)
+		pb.WriteString("|g\n")
+		s.writeStatsDMetric(pb.Bytes())
+	}
+
+	if !s.options.SkipNestedEvents {
+		pb := s.getPrefixBuffer(job, event, "")
+		pb.Write(s.timingBuf)
+		pb.WriteString("|g\n")
+		s.writeStatsDMetric(pb.Bytes())
+	}
+}
+
+func (s *StatsDSink) processComplete(job string, status CompletionStatus, nanos int64) {
+	s.writeNanosToTimingBuf(nanos)
+	statusString := status.String()
+	pb := s.getPrefixBuffer(job, "", statusString)
+	pb.Write(s.timingBuf)
+	pb.WriteString("|ms\n")
+	s.writeStatsDMetric(pb.Bytes())
 }
 
 func sanitizeKey(b *bytes.Buffer, s string) {
