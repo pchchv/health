@@ -46,6 +46,15 @@ type StatsDSinkOptions struct {
 	SkipTopLevelEvents bool
 }
 
+type statsdEmitCmd struct {
+	Kind   statsdCmdKind
+	Job    string
+	Event  string
+	Nanos  int64
+	Value  float64
+	Status CompletionStatus
+}
+
 func sanitizeKey(b *bytes.Buffer, s string) {
 	b.Grow(len(s) + 1)
 	for i := 0; i < len(s); i++ {
