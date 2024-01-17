@@ -2,6 +2,8 @@ package health
 
 import "bytes"
 
+var defaultStatsDOptions = StatsDSinkOptions{SanitizationFunc: sanitizeKey}
+
 type StatsDSinkSanitizationFunc func(*bytes.Buffer, string)
 
 type eventKey struct {
@@ -29,4 +31,16 @@ type StatsDSinkOptions struct {
 	// SkipTopLevelEvents will skip {events,timers,gauges} from sending the event version
 	// and will only send the job.event version.
 	SkipTopLevelEvents bool
+}
+
+func sanitizeKey(b *bytes.Buffer, s string) {
+	b.Grow(len(s) + 1)
+	for i := 0; i < len(s); i++ {
+		si := s[i]
+		if ('A' <= si && si <= 'Z') || ('a' <= si && si <= 'z') || ('0' <= si && s[i] <= '9') || si == '_' || si == '.' {
+			b.WriteByte(si)
+		} else {
+			b.WriteByte('$')
+		}
+	}
 }
