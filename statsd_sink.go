@@ -9,6 +9,7 @@ import (
 
 const (
 	maxUdpBytes                     = 1440 // 1500(Ethernet MTU) - 60(Max UDP header size
+	cmdChanBuffSize                 = 8192 // random-ass-guess
 	statsdCmdKindStop statsdCmdKind = iota
 	statsdCmdKindEvent
 	statsdCmdKindGauge
@@ -75,6 +76,41 @@ type StatsDSink struct {
 	// Since each timing/gauge has a unique component (the time), we'll truncate to the prefix, write the timing,
 	// and write the statsD suffix (eg, "|ms\n"). Then copy that to the UDP buffer.
 	prefixBuffers map[eventKey]prefixBuffer
+}
+
+func NewStatsDSink(addr string, options *StatsDSinkOptions) (*StatsDSink, error) {
+	c, err := net.ListenPacket("udp", ":0")
+	if err != nil {
+		return nil, err
+	}
+
+	ra, err := net.ResolveUDPAddr("udp", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	s := &StatsDSink{
+		udpConn:       c.(*net.UDPConn),
+		udpAddr:       ra,
+		cmdChan:       make(chan statsdEmitCmd, cmdChanBuffSize),
+		drainDoneChan: make(chan struct{}),
+		stopDoneChan:  make(chan struct{}),
+		flushPeriod:   100 * time.Millisecond,
+		prefixBuffers: make(map[eventKey]prefixBuffer),
+	}
+
+	if options != nil {
+		s.options = *options
+		if s.options.SanitizationFunc == nil {
+			s.options.SanitizationFunc = sanitizeKey
+		}
+	} else {
+		s.options = defaultStatsDOptions
+	}
+
+	go s.loop()
+
+	return s, nil
 }
 
 func (s *StatsDSink) Stop() {
