@@ -95,6 +95,14 @@ func (s *StatsDSink) EmitEventErr(job string, event string, inputErr error, kvs 
 	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindEventErr, Job: job, Event: event}
 }
 
+func (s *StatsDSink) EmitTiming(job string, event string, nanos int64, kvs map[string]string) {
+	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindTiming, Job: job, Event: event, Nanos: nanos}
+}
+
+func (s *StatsDSink) EmitGauge(job string, event string, value float64, kvs map[string]string) {
+	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindGauge, Job: job, Event: event, Value: value}
+}
+
 func (s *StatsDSink) flush() {
 	if s.udpBuf.Len() > 0 {
 		s.udpConn.WriteToUDP(s.udpBuf.Bytes(), s.udpAddr)
