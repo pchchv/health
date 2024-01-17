@@ -224,6 +224,58 @@ func (s *StatsDSink) processComplete(job string, status CompletionStatus, nanos 
 	s.writeStatsDMetric(pb.Bytes())
 }
 
+func (s *StatsDSink) processCmd(cmd *statsdEmitCmd) {
+	switch cmd.Kind {
+	case statsdCmdKindEvent:
+		s.processEvent(cmd.Job, cmd.Event)
+	case statsdCmdKindEventErr:
+		s.processEventErr(cmd.Job, cmd.Event)
+	case statsdCmdKindTiming:
+		s.processTiming(cmd.Job, cmd.Event, cmd.Nanos)
+	case statsdCmdKindGauge:
+		s.processGauge(cmd.Job, cmd.Event, cmd.Value)
+	case statsdCmdKindComplete:
+		s.processComplete(cmd.Job, cmd.Status, cmd.Nanos)
+	}
+}
+
+func (s *StatsDSink) loop() {
+	cmdChan := s.cmdChan
+	ticker := time.NewTicker(s.flushPeriod)
+	go func() {
+		for range ticker.C {
+			cmdChan <- statsdEmitCmd{Kind: statsdCmdKindFlush}
+		}
+	}()
+
+LOOP:
+	for cmd := range cmdChan {
+		switch cmd.Kind {
+		case statsdCmdKindDrain:
+		DRAIN_LOOP:
+			for {
+				select {
+				case cmd := <-cmdChan:
+					s.processCmd(&cmd)
+				default:
+					s.flush()
+					s.drainDoneChan <- struct{}{}
+					break DRAIN_LOOP
+				}
+			}
+		case statsdCmdKindStop:
+			s.stopDoneChan <- struct{}{}
+			break LOOP
+		case statsdCmdKindFlush:
+			s.flush()
+		default:
+			s.processCmd(&cmd)
+		}
+	}
+
+	ticker.Stop()
+}
+
 func sanitizeKey(b *bytes.Buffer, s string) {
 	b.Grow(len(s) + 1)
 	for i := 0; i < len(s); i++ {
