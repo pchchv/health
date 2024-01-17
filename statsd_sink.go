@@ -87,6 +87,14 @@ func (s *StatsDSink) Drain() {
 	<-s.drainDoneChan
 }
 
+func (s *StatsDSink) EmitEvent(job string, event string, kvs map[string]string) {
+	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindEvent, Job: job, Event: event}
+}
+
+func (s *StatsDSink) EmitEventErr(job string, event string, inputErr error, kvs map[string]string) {
+	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindEventErr, Job: job, Event: event}
+}
+
 func (s *StatsDSink) flush() {
 	if s.udpBuf.Len() > 0 {
 		s.udpConn.WriteToUDP(s.udpBuf.Bytes(), s.udpAddr)
