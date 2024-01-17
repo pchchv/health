@@ -135,6 +135,34 @@ func (s *StatsDSink) writeStatsDMetric(b []byte) {
 	s.udpBuf.Write(b)
 }
 
+func (s *StatsDSink) processEvent(job string, event string) {
+	if !s.options.SkipTopLevelEvents {
+		pb := s.getPrefixBuffer("", event, "")
+		pb.WriteString("1|c\n")
+		s.writeStatsDMetric(pb.Bytes())
+	}
+
+	if !s.options.SkipNestedEvents {
+		pb := s.getPrefixBuffer(job, event, "")
+		pb.WriteString("1|c\n")
+		s.writeStatsDMetric(pb.Bytes())
+	}
+}
+
+func (s *StatsDSink) processEventErr(job string, event string) {
+	if !s.options.SkipTopLevelEvents {
+		pb := s.getPrefixBuffer("", event, "error")
+		pb.WriteString("1|c\n")
+		s.writeStatsDMetric(pb.Bytes())
+	}
+
+	if !s.options.SkipNestedEvents {
+		pb := s.getPrefixBuffer(job, event, "error")
+		pb.WriteString("1|c\n")
+		s.writeStatsDMetric(pb.Bytes())
+	}
+}
+
 func sanitizeKey(b *bytes.Buffer, s string) {
 	b.Grow(len(s) + 1)
 	for i := 0; i < len(s); i++ {
