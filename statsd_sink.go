@@ -3,6 +3,7 @@ package health
 import (
 	"bytes"
 	"net"
+	"strconv"
 	"time"
 )
 
@@ -83,19 +84,6 @@ func (s *StatsDSink) flush() {
 	}
 }
 
-func (s *StatsDSink) writeSanitizedKeys(b *bytes.Buffer, keys ...string) {
-	needDot := false
-	for _, k := range keys {
-		if k != "" {
-			if needDot {
-				b.WriteByte('.')
-			}
-			s.options.SanitizationFunc(b, k)
-			needDot = true
-		}
-	}
-}
-
 func (s *StatsDSink) getPrefixBuffer(job, event, suffix string) prefixBuffer {
 	key := eventKey{job, event, suffix}
 	b, ok := s.prefixBuffers[key]
@@ -111,6 +99,16 @@ func (s *StatsDSink) getPrefixBuffer(job, event, suffix string) prefixBuffer {
 		b.Truncate(b.prefixLen)
 	}
 	return b
+}
+
+func (s *StatsDSink) writeNanosToTimingBuf(nanos int64) {
+	s.timingBuf = s.timingBuf[0:0]
+	if nanos >= 10e6 {
+		// More than 10 milliseconds. We'll just print as an integer
+		s.timingBuf = strconv.AppendInt(s.timingBuf, nanos/1e6, 10)
+	} else {
+		s.timingBuf = strconv.AppendFloat(s.timingBuf, float64(nanos)/float64(time.Millisecond), 'f', 2, 64)
+	}
 }
 
 // assumes b is a well-formed statsd metric like "job.event:1|c\n" (including newline)
@@ -133,6 +131,19 @@ func (s *StatsDSink) writeStatsDMetric(b []byte) {
 	}
 
 	s.udpBuf.Write(b)
+}
+
+func (s *StatsDSink) writeSanitizedKeys(b *bytes.Buffer, keys ...string) {
+	needDot := false
+	for _, k := range keys {
+		if k != "" {
+			if needDot {
+				b.WriteByte('.')
+			}
+			s.options.SanitizationFunc(b, k)
+			needDot = true
+		}
+	}
 }
 
 func (s *StatsDSink) processEvent(job string, event string) {
@@ -159,6 +170,24 @@ func (s *StatsDSink) processEventErr(job string, event string) {
 	if !s.options.SkipNestedEvents {
 		pb := s.getPrefixBuffer(job, event, "error")
 		pb.WriteString("1|c\n")
+		s.writeStatsDMetric(pb.Bytes())
+	}
+}
+
+func (s *StatsDSink) processTiming(job string, event string, nanos int64) {
+	s.writeNanosToTimingBuf(nanos)
+
+	if !s.options.SkipTopLevelEvents {
+		pb := s.getPrefixBuffer("", event, "")
+		pb.Write(s.timingBuf)
+		pb.WriteString("|ms\n")
+		s.writeStatsDMetric(pb.Bytes())
+	}
+
+	if !s.options.SkipNestedEvents {
+		pb := s.getPrefixBuffer(job, event, "")
+		pb.Write(s.timingBuf)
+		pb.WriteString("|ms\n")
 		s.writeStatsDMetric(pb.Bytes())
 	}
 }
