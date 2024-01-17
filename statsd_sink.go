@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	maxUdpBytes                     = 1440 // 1500(Ethernet MTU) - 60(Max UDP header size
 	statsdCmdKindStop statsdCmdKind = iota
 	statsdCmdKindEvent
 	statsdCmdKindGauge
@@ -93,6 +94,45 @@ func (s *StatsDSink) writeSanitizedKeys(b *bytes.Buffer, keys ...string) {
 			needDot = true
 		}
 	}
+}
+
+func (s *StatsDSink) getPrefixBuffer(job, event, suffix string) prefixBuffer {
+	key := eventKey{job, event, suffix}
+	b, ok := s.prefixBuffers[key]
+	if !ok {
+		b.Buffer = &bytes.Buffer{}
+		s.writeSanitizedKeys(b.Buffer, s.options.Prefix, job, event, suffix)
+		b.WriteByte(':')
+		b.prefixLen = b.Len()
+		// 123456789.99|ms\n 16 bytes. timing value represents 11 days max
+		b.Grow(16)
+		s.prefixBuffers[key] = b
+	} else {
+		b.Truncate(b.prefixLen)
+	}
+	return b
+}
+
+// assumes b is a well-formed statsd metric like "job.event:1|c\n" (including newline)
+func (s *StatsDSink) writeStatsDMetric(b []byte) {
+	lenb := len(b)
+	if lenb == 0 {
+		return
+	}
+
+	// single metric exceeds limit. sad day.
+	if lenb > maxUdpBytes {
+		return
+	}
+
+	lenUdpBuf := s.udpBuf.Len()
+
+	if (lenb + lenUdpBuf) > maxUdpBytes {
+		s.udpConn.WriteToUDP(s.udpBuf.Bytes(), s.udpAddr)
+		s.udpBuf.Truncate(0)
+	}
+
+	s.udpBuf.Write(b)
 }
 
 func sanitizeKey(b *bytes.Buffer, s string) {
