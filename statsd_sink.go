@@ -2,9 +2,22 @@ package health
 
 import "bytes"
 
+const (
+	statsdCmdKindStop statsdCmdKind = iota
+	statsdCmdKindEvent
+	statsdCmdKindGauge
+	statsdCmdKindFlush
+	statsdCmdKindDrain
+	statsdCmdKindTiming
+	statsdCmdKindComplete
+	statsdCmdKindEventErr
+)
+
 var defaultStatsDOptions = StatsDSinkOptions{SanitizationFunc: sanitizeKey}
 
 type StatsDSinkSanitizationFunc func(*bytes.Buffer, string)
+
+type statsdCmdKind int
 
 type eventKey struct {
 	job    string
