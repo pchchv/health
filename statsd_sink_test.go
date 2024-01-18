@@ -29,6 +29,23 @@ func TestStatsDSinkPeriodicPurge(t *testing.T) {
 	})
 }
 
+func TestStatsDSinkPacketLimit(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid", SkipNestedEvents: true})
+	assert.NoError(t, err)
+
+	// s is 101 bytes
+	s := "metroid." + strings.Repeat("a", 88) + ":1|c\n"
+
+	// expect 1 packet that is 14*101=1414 bytes, and the next one to be 101 bytes
+	listenFor(t, []string{strings.Repeat(s, 14), s}, func() {
+		for i := 0; i < 15; i++ {
+			sink.EmitEvent("my.job", strings.Repeat("a", 88), nil)
+		}
+
+		sink.Drain()
+	})
+}
+
 func listenFor(t *testing.T, msgs []string, f func()) {
 	c, err := net.ListenPacket("udp", testAddr)
 	defer c.Close()
