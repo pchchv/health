@@ -105,3 +105,26 @@ func TestJsonWriterSinkEventComplete(t *testing.T) {
 		buf.Reset()
 	}
 }
+
+func BenchmarkJsonWriterSinkEmitBlankEvent(b *testing.B) {
+	var buf bytes.Buffer
+	sink := JsonWriterSink{&buf}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		buf.Reset()
+		sink.EmitEvent("myjob", "myevent", nil)
+	}
+	b.ReportAllocs()
+}
+
+func BenchmarkJsonWriterSinkEmitSmallEvent(b *testing.B) {
+	var buf bytes.Buffer
+	someKvs := map[string]string{"foo": "bar", "qux": "dog"}
+	sink := JsonWriterSink{&buf}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		buf.Reset()
+		sink.EmitEvent("myjob", "myevent", someKvs)
+	}
+	b.ReportAllocs()
+}
