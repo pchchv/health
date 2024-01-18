@@ -5,6 +5,7 @@ import (
 	"net"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -272,6 +273,90 @@ func TestStatsDSinkEmitTimingSubMillisecond(t *testing.T) {
 		sink.EmitTiming("my.job", "my.event", 456789, nil)
 		sink.Drain()
 	})
+}
+
+func BenchmarkStatsDSinkProcessEvent(b *testing.B) {
+	sink, _ := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	sink.Stop() // Don't do periodic things while we're benching
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sink.processEvent("myjob", "myevent")
+	}
+}
+
+func BenchmarkStatsDSinkProcessEventErr(b *testing.B) {
+	sink, _ := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	sink.Stop() // Don't do periodic things while we're benching
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sink.processEventErr("myjob", "myevent")
+	}
+}
+
+func BenchmarkStatsDSinkProcessTimingBig(b *testing.B) {
+	sink, _ := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	sink.Stop() // Don't do periodic things while we're benching
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sink.processTiming("myjob", "myevent", 30000000)
+	}
+}
+
+func BenchmarkStatsDSinkProcessTimingSmall(b *testing.B) {
+	sink, _ := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	sink.Stop() // Don't do periodic things while we're benching
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sink.processTiming("myjob", "myevent", 1230000)
+	}
+}
+
+func BenchmarkStatsDSinkProcessGauge(b *testing.B) {
+	sink, _ := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	sink.Stop() // Don't do periodic things while we're benching
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sink.processGauge("myjob", "myevent", 3.14)
+	}
+}
+
+func BenchmarkStatsDSinkProcessComplete(b *testing.B) {
+	sink, _ := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	sink.Stop() // Don't do periodic things while we're benching
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sink.processComplete("myjob", Success, 1230000)
+	}
+}
+
+func BenchmarkStatsDSinkOverall(b *testing.B) {
+	const numGoroutines = 100
+	var requestsPerGoroutine = b.N / numGoroutines
+
+	stream := NewStream()
+	sink, _ := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	stream.AddSink(sink)
+	job := stream.NewJob("foo")
+
+	wg := sync.WaitGroup{}
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func() {
+			for j := 0; j < requestsPerGoroutine; j++ {
+				job.Event("evt")
+			}
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+	sink.Drain()
 }
 
 func listenFor(t *testing.T, msgs []string, f func()) {
