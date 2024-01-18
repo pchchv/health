@@ -136,6 +136,56 @@ func TestStatsDSinkEmitEventErrSkipTopLevel(t *testing.T) {
 	})
 }
 
+func TestStatsDSinkEmitTimingPrefix(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"metroid.my.event:123|ms\nmetroid.my.job.my.event:123|ms\n"}, func() {
+		sink.EmitTiming("my.job", "my.event", 123456789, nil)
+		sink.Drain()
+	})
+}
+
+func TestStatsDSinkEmitTimingNoPrefix(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, nil)
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"my.event:123|ms\nmy.job.my.event:123|ms\n"}, func() {
+		sink.EmitTiming("my.job", "my.event", 123456789, nil)
+		sink.Drain()
+	})
+}
+
+func TestStatsDSinkEmitTimingSkipNested(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{SkipNestedEvents: true})
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"my.event:123|ms\n"}, func() {
+		sink.EmitTiming("my.job", "my.event", 123456789, nil)
+		sink.Drain()
+	})
+}
+
+func TestStatsDSinkEmitTimingSkipTopLevel(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{SkipTopLevelEvents: true})
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"my.job.my.event:123|ms\n"}, func() {
+		sink.EmitTiming("my.job", "my.event", 123456789, nil)
+		sink.Drain()
+	})
+}
+
+func TestStatsDSinkEmitTimingShort(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, nil)
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"my.event:1.23|ms\nmy.job.my.event:1.23|ms\n"}, func() {
+		sink.EmitTiming("my.job", "my.event", 1234567, nil)
+		sink.Drain()
+	})
+}
+
 func listenFor(t *testing.T, msgs []string, f func()) {
 	c, err := net.ListenPacket("udp", testAddr)
 	defer c.Close()
