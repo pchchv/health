@@ -46,6 +46,26 @@ func TestStatsDSinkPacketLimit(t *testing.T) {
 	})
 }
 
+func TestStatsDSinkEmitEventPrefix(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"metroid.my.event:1|c\nmetroid.my.job.my.event:1|c\n"}, func() {
+		sink.EmitEvent("my.job", "my.event", nil)
+		sink.Drain()
+	})
+}
+
+func TestStatsDSinkEmitEventNoPrefix(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, nil)
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"my.event:1|c\nmy.job.my.event:1|c\n"}, func() {
+		sink.EmitEvent("my.job", "my.event", nil)
+		sink.Drain()
+	})
+}
+
 func listenFor(t *testing.T, msgs []string, f func()) {
 	c, err := net.ListenPacket("udp", testAddr)
 	defer c.Close()
