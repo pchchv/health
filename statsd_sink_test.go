@@ -264,6 +264,16 @@ func TestStatsDSinkEmitCompleteNoPrefix(t *testing.T) {
 	}
 }
 
+func TestStatsDSinkEmitTimingSubMillisecond(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"metroid.my.event:0.46|ms\nmetroid.my.job.my.event:0.46|ms\n"}, func() {
+		sink.EmitTiming("my.job", "my.event", 456789, nil)
+		sink.Drain()
+	})
+}
+
 func listenFor(t *testing.T, msgs []string, f func()) {
 	c, err := net.ListenPacket("udp", testAddr)
 	defer c.Close()
