@@ -37,3 +37,33 @@ func (j *JsonWriterSink) EmitEventErr(job string, event string, err error, kvs m
 	}
 	j.Write(b)
 }
+
+func (j *JsonWriterSink) EmitTiming(job string, event string, nanoseconds int64, kvs map[string]string) {
+	b, err := json.Marshal(struct {
+		Job         string
+		Event       string
+		Timestamp   string
+		Nanoseconds int64
+		Kvs         map[string]string
+	}{job, event, timestamp(), nanoseconds, kvs})
+
+	if err != nil {
+		return
+	}
+	j.Write(b)
+}
+
+func (j *JsonWriterSink) EmitGauge(job string, event string, value float64, kvs map[string]string) {
+	b, err := json.Marshal(struct {
+		Job       string
+		Event     string
+		Timestamp string
+		Value     float64
+		Kvs       map[string]string
+	}{job, event, timestamp(), value, kvs})
+
+	if err != nil {
+		return
+	}
+	j.Write(b)
+}
