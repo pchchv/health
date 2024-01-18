@@ -238,6 +238,32 @@ func TestStatsDSinkEmitGaugeSkipTopLevel(t *testing.T) {
 	})
 }
 
+func TestStatsDSinkEmitCompletePrefix(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	defer sink.Stop()
+	assert.NoError(t, err)
+	for kind, kindStr := range completionStatusToString {
+		str := fmt.Sprintf("metroid.my.job.%s:129|ms\n", kindStr)
+		listenFor(t, []string{str}, func() {
+			sink.EmitComplete("my.job", kind, 129456789, nil)
+			sink.Drain()
+		})
+	}
+}
+
+func TestStatsDSinkEmitCompleteNoPrefix(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, nil)
+	defer sink.Stop()
+	assert.NoError(t, err)
+	for kind, kindStr := range completionStatusToString {
+		str := fmt.Sprintf("my.job.%s:129|ms\n", kindStr)
+		listenFor(t, []string{str}, func() {
+			sink.EmitComplete("my.job", kind, 129456789, nil)
+			sink.Drain()
+		})
+	}
+}
+
 func listenFor(t *testing.T, msgs []string, f func()) {
 	c, err := net.ListenPacket("udp", testAddr)
 	defer c.Close()
