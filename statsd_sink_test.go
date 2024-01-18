@@ -1,7 +1,10 @@
 package health
 
 import (
+	"fmt"
 	"net"
+	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -30,4 +33,15 @@ func listenFor(t *testing.T, msgs []string, f func()) {
 			}
 		}
 	}
+}
+
+func callerInfo() string {
+	_, file, line, ok := runtime.Caller(2)
+	if !ok {
+		return ""
+	}
+
+	parts := strings.Split(file, "/")
+	file = parts[len(parts)-1]
+	return fmt.Sprintf("%s:%d", file, line)
 }
