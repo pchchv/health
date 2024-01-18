@@ -116,6 +116,26 @@ func TestStatsDSinkEmitEventSkipTopLevel(t *testing.T) {
 	})
 }
 
+func TestStatsDSinkEmitEventErrSkipNested(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{SkipNestedEvents: true})
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"my.event.error:1|c\n"}, func() {
+		sink.EmitEventErr("my.job", "my.event", testErr, nil)
+		sink.Drain()
+	})
+}
+
+func TestStatsDSinkEmitEventErrSkipTopLevel(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{SkipTopLevelEvents: true})
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"my.job.my.event.error:1|c\n"}, func() {
+		sink.EmitEventErr("my.job", "my.event", testErr, nil)
+		sink.Drain()
+	})
+}
+
 func listenFor(t *testing.T, msgs []string, f func()) {
 	c, err := net.ListenPacket("udp", testAddr)
 	defer c.Close()
