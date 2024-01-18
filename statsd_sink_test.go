@@ -13,6 +13,22 @@ import (
 
 var testAddr = "127.0.0.1:7890"
 
+func TestStatsDSinkPeriodicPurge(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	assert.NoError(t, err)
+
+	// Stop the sink, set a smaller flush period, and start it agian
+	sink.Stop()
+	sink.flushPeriod = 1 * time.Millisecond
+	go sink.loop()
+	defer sink.Stop()
+
+	listenFor(t, []string{"metroid.my.event:1|c\nmetroid.my.job.my.event:1|c\n"}, func() {
+		sink.EmitEvent("my.job", "my.event", nil)
+		time.Sleep(10 * time.Millisecond)
+	})
+}
+
 func listenFor(t *testing.T, msgs []string, f func()) {
 	c, err := net.ListenPacket("udp", testAddr)
 	defer c.Close()
