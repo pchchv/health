@@ -186,6 +186,58 @@ func TestStatsDSinkEmitTimingShort(t *testing.T) {
 	})
 }
 
+func TestStatsDSinkEmitGaugePrefix(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid"})
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"metroid.my.event:3.14|g\nmetroid.my.job.my.event:3.14|g\n"}, func() {
+		sink.EmitGauge("my.job", "my.event", 3.14, nil)
+		sink.Drain()
+	})
+}
+
+func TestStatsDSinkEmitGaugeSmall(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{Prefix: "metroid", SkipNestedEvents: true})
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"metroid.my.event:0.14|g\nmetroid.my.event:0.0401|g\nmetroid.my.event:-0.0001|g\n"}, func() {
+		sink.EmitGauge("my.job", "my.event", 0.1401, nil)
+		sink.EmitGauge("my.job", "my.event", 0.0401, nil)
+		sink.EmitGauge("my.job", "my.event", -0.0001, nil)
+		sink.Drain()
+	})
+}
+
+func TestStatsDSinkEmitGaugeNoPrefix(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, nil)
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"my.event:3.00|g\nmy.job.my.event:3.00|g\n"}, func() {
+		sink.EmitGauge("my.job", "my.event", 3, nil)
+		sink.Drain()
+	})
+}
+
+func TestStatsDSinkEmitGaugeSkipNested(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{SkipNestedEvents: true})
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"my.event:3.00|g\n"}, func() {
+		sink.EmitGauge("my.job", "my.event", 3, nil)
+		sink.Drain()
+	})
+}
+
+func TestStatsDSinkEmitGaugeSkipTopLevel(t *testing.T) {
+	sink, err := NewStatsDSink(testAddr, &StatsDSinkOptions{SkipTopLevelEvents: true})
+	defer sink.Stop()
+	assert.NoError(t, err)
+	listenFor(t, []string{"my.job.my.event:3.00|g\n"}, func() {
+		sink.EmitGauge("my.job", "my.event", 3, nil)
+		sink.Drain()
+	})
+}
+
 func listenFor(t *testing.T, msgs []string, f func()) {
 	c, err := net.ListenPacket("udp", testAddr)
 	defer c.Close()
