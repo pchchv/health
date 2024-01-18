@@ -13,3 +13,9 @@ type HostStatus struct {
 	FirstSuccessfulResponse time.Time     `json:"first_successful_response"`
 	LastSuccessfulResponse  time.Time     `json:"last_successful_response"`
 }
+
+type hostAggregationKey struct {
+	Time       time.Time
+	InstanceId string
+	HostPort   string
+}
