@@ -70,7 +70,7 @@ func (hd *HealthD) poll(responses chan *pollResponse) {
 // purge purges old hostAggregations older than 5 intervals.
 func (agg *HealthD) purge() {
 	var threshold = agg.intervalDuration * 5
-	for k, _ := range agg.hostAggregations {
+	for k := range agg.hostAggregations {
 		if time.Since(k.Time) > threshold {
 			delete(agg.hostAggregations, k)
 		}
