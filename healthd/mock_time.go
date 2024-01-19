@@ -25,3 +25,19 @@ func advanceNowMock(dur time.Duration) {
 	}
 	nowMock = nowMock.Add(dur)
 }
+
+func setNowMock(t string) {
+	var err error
+	nowMut.Lock()
+	defer nowMut.Unlock()
+	nowMock, err = time.Parse(time.RFC3339, t)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func resetNowMock() {
+	nowMut.Lock()
+	defer nowMut.Unlock()
+	nowMock = time.Time{}
+}
