@@ -16,3 +16,12 @@ func now() time.Time {
 	}
 	return nowMock
 }
+
+func advanceNowMock(dur time.Duration) {
+	nowMut.Lock()
+	defer nowMut.Unlock()
+	if nowMock.IsZero() {
+		panic("nowMock is not set")
+	}
+	nowMock = nowMock.Add(dur)
+}
