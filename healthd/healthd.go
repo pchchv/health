@@ -25,6 +25,8 @@ type hostAggregationKey struct {
 	HostPort   string
 }
 
+type ByInterval []*health.IntervalAggregation
+
 type HealthD struct {
 	stream *health.Stream
 	// How long is each aggregation interval, e.g. 1 minute
