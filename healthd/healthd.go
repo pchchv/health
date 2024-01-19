@@ -35,6 +35,10 @@ func (a ByInterval) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
 }
 
+func (a ByInterval) Less(i, j int) bool {
+	return a[i].IntervalStart.Before(a[j].IntervalStart)
+}
+
 type HealthD struct {
 	stream *health.Stream
 	// How long is each aggregation interval, e.g. 1 minute
