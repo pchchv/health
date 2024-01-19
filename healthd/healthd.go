@@ -1,6 +1,7 @@
 package healthd
 
 import (
+	"sync"
 	"time"
 
 	"github.com/pchchv/health"
@@ -48,4 +49,35 @@ type HealthD struct {
 	stopAggregator     chan bool
 	stopStopAggregator chan bool
 	stopHTTP           func() bool
+}
+
+// poll is meant to be alled in a new goroutine.
+// It will poll each managed host in a new goroutine.
+// When everything has finished, it will send nil to responses to signal that we have all data.
+func (hd *HealthD) poll(responses chan *pollResponse) {
+	var wg sync.WaitGroup
+	for _, hs := range hd.hostStatus {
+		wg.Add(1)
+		go func(hs *HostStatus) {
+			defer wg.Done()
+			poll(hd.stream, hs.HostPort, responses)
+		}(hs)
+	}
+	wg.Wait()
+	responses <- nil
+}
+
+// purge purges old hostAggregations older than 5 intervals.
+func (agg *HealthD) purge() {
+	var threshold = agg.intervalDuration * 5
+	for k, _ := range agg.hostAggregations {
+		if time.Since(k.Time) > threshold {
+			delete(agg.hostAggregations, k)
+		}
+	}
+
+	n := len(agg.intervalAggregations)
+	if n > agg.maxIntervals {
+		agg.intervalAggregations = agg.intervalAggregations[(n - agg.maxIntervals):]
+	}
 }
