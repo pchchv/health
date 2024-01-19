@@ -164,7 +164,7 @@ func (hd *HealthD) consumePollResponse(resp *pollResponse) {
 	// add resp to hostAggregations
 	if resp.Code == 200 && resp.Err == nil {
 		if hd.intervalDuration == 0 {
-			hd.intervalDuration = resp.IntervalDuration // TODO: validate this
+			hd.intervalDuration = resp.IntervalDuration
 			hd.maxIntervals = int(hd.retain / hd.intervalDuration)
 		} else if hd.intervalDuration != resp.IntervalDuration {
 			fmt.Println("interval duration mismatch: agg.intervalDuration=", hd.intervalDuration, " but resp.IntervalDuration=", resp.IntervalDuration)
@@ -185,4 +185,18 @@ func (hd *HealthD) consumePollResponse(resp *pollResponse) {
 			}
 		}
 	}
+}
+
+func (agg *HealthD) memorySafeIntervals() (ret []*health.IntervalAggregation) {
+	for _, intAgg := range agg.intervalAggregations {
+		ret = append(ret, intAgg.Clone())
+	}
+	return ret
+}
+
+func (hd *HealthD) memorySafeHosts() (ret []*HostStatus) {
+	for _, hs := range hd.hostStatus {
+		ret = append(ret, hs)
+	}
+	return ret
 }
