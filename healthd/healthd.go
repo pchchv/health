@@ -116,3 +116,25 @@ func (agg *HealthD) setAggregation(intAgg *health.IntervalAggregation) {
 		agg.intervalAggregations = agg.intervalAggregations[(n - agg.maxIntervals):]
 	}
 }
+
+func (hd *HealthD) recalculateIntervals() {
+	job := hd.stream.NewJob("recalculate")
+	for k := range hd.intervalsNeedingRecalculation {
+		intAggsAtTime := []*health.IntervalAggregation{}
+		for key, intAgg := range hd.hostAggregations {
+			if key.Time == k {
+				intAggsAtTime = append(intAggsAtTime, intAgg)
+			}
+		}
+
+		overallAgg := health.NewIntervalAggregation(k)
+		for _, ia := range intAggsAtTime {
+			overallAgg.Merge(ia)
+		}
+		hd.setAggregation(overallAgg)
+	}
+
+	// reset everything:
+	hd.intervalsNeedingRecalculation = make(map[time.Time]struct{})
+	job.Complete(health.Success)
+}
