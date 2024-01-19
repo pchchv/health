@@ -27,6 +27,14 @@ type hostAggregationKey struct {
 
 type ByInterval []*health.IntervalAggregation
 
+func (a ByInterval) Len() int {
+	return len(a)
+}
+
+func (a ByInterval) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
 type HealthD struct {
 	stream *health.Stream
 	// How long is each aggregation interval, e.g. 1 minute
