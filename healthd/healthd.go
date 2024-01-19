@@ -1,6 +1,7 @@
 package healthd
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -137,4 +138,51 @@ func (hd *HealthD) recalculateIntervals() {
 	// reset everything:
 	hd.intervalsNeedingRecalculation = make(map[time.Time]struct{})
 	job.Complete(health.Success)
+}
+
+func (hd *HealthD) consumePollResponse(resp *pollResponse) {
+	if hs, ok := hd.hostStatus[resp.HostPort]; ok {
+		hs.LastCheckTime = resp.Timestamp
+		hs.LastNanos = resp.Nanos
+		hs.LastInstanceId = resp.InstanceId
+		hs.LastIntervalDuration = resp.IntervalDuration
+		hs.LastCode = resp.Code
+		if resp.Err == nil {
+			hs.LastErr = ""
+		} else {
+			hs.LastErr = resp.Err.Error()
+		}
+
+		if resp.Code == 200 && resp.Err == nil {
+			if hs.FirstSuccessfulResponse.IsZero() {
+				hs.FirstSuccessfulResponse = now()
+			}
+			hs.LastSuccessfulResponse = now()
+		}
+	}
+
+	// add resp to hostAggregations
+	if resp.Code == 200 && resp.Err == nil {
+		if hd.intervalDuration == 0 {
+			hd.intervalDuration = resp.IntervalDuration // TODO: validate this
+			hd.maxIntervals = int(hd.retain / hd.intervalDuration)
+		} else if hd.intervalDuration != resp.IntervalDuration {
+			fmt.Println("interval duration mismatch: agg.intervalDuration=", hd.intervalDuration, " but resp.IntervalDuration=", resp.IntervalDuration)
+			return
+		}
+
+		for _, intAgg := range resp.IntervalAggregations {
+			key := hostAggregationKey{
+				Time:       intAgg.IntervalStart,
+				InstanceId: resp.InstanceId,
+				HostPort:   resp.HostPort,
+			}
+
+			existingIntAgg, ok := hd.hostAggregations[key]
+			if !ok && existingIntAgg.SerialNumber != intAgg.SerialNumber {
+				hd.hostAggregations[key] = intAgg
+				hd.intervalsNeedingRecalculation[intAgg.IntervalStart] = struct{}{}
+			}
+		}
+	}
 }
