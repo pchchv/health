@@ -14,3 +14,7 @@ type pollResponse struct {
 	Nanos     int64
 	health.HealthAggregationsResponse
 }
+
+func metricsUrl(hostPort string) string {
+	return "http://" + hostPort + "/health"
+}
