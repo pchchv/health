@@ -1,6 +1,7 @@
 package healthd
 
 import (
+	"sort"
 	"sync"
 	"time"
 
@@ -90,6 +91,26 @@ func (agg *HealthD) purge() {
 		}
 	}
 
+	n := len(agg.intervalAggregations)
+	if n > agg.maxIntervals {
+		agg.intervalAggregations = agg.intervalAggregations[(n - agg.maxIntervals):]
+	}
+}
+
+func (agg *HealthD) setAggregation(intAgg *health.IntervalAggregation) {
+	// If we already have the intAgg, replace it.
+	for i, existingAgg := range agg.intervalAggregations {
+		if existingAgg.IntervalStart == intAgg.IntervalStart {
+			agg.intervalAggregations[i] = intAgg
+			return
+		}
+	}
+
+	// Otherwise, just append it and sort to get ordering right.
+	agg.intervalAggregations = append(agg.intervalAggregations, intAgg)
+	sort.Sort(ByInterval(agg.intervalAggregations))
+
+	// If we have too many aggregations, truncate
 	n := len(agg.intervalAggregations)
 	if n > agg.maxIntervals {
 		agg.intervalAggregations = agg.intervalAggregations[(n - agg.maxIntervals):]
