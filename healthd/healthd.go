@@ -200,3 +200,52 @@ func (hd *HealthD) memorySafeHosts() (ret []*HostStatus) {
 	}
 	return ret
 }
+
+func (hd *HealthD) pollAndAggregate() {
+	ticker := time.Tick(10 * time.Second)
+	responses := make(chan *pollResponse, 64)
+	recalcIntervals := make(chan struct{})
+	recalcIntervalsRequest := make(chan struct{}, 64)
+	intervalsChanChan := hd.intervalsChanChan
+	hostsChanChan := hd.hostsChanChan
+
+	go debouncer(recalcIntervals, recalcIntervalsRequest, time.Second*2, time.Millisecond*300)
+
+	// Immediately poll for servers on healthd startup
+	go hd.poll(responses)
+
+AGGREGATE_LOOP:
+	for {
+		// Usual flow:
+		// 1. ticker ticks. Poll each host.
+		// 2. Get responses in. Trigger debouncer
+		// 3. If we get all responses quickly, we'll get a nil, and then recalc.
+		// 4. The debouncer will fire in 2 seconds and do a partial calc or full recalc.
+		// 5. Repeat 2-4 until all resonses are in and everything settles down.
+		// At any time, we could get:
+		//  - A requset for metrics. We'll get a channel and send response back on that channel.
+		//  - A requset to shut down.
+		select {
+		case <-ticker:
+			go hd.poll(responses)
+			hd.purge()
+		case resp := <-responses:
+			if resp == nil {
+				// nil is a sentinel value that is sent when all hosts have reported in.
+				hd.recalculateIntervals()
+			} else {
+				hd.consumePollResponse(resp)
+				recalcIntervalsRequest <- struct{}{}
+			}
+		case <-recalcIntervals:
+			hd.recalculateIntervals()
+		case intervalsChan := <-intervalsChanChan:
+			intervalsChan <- hd.memorySafeIntervals()
+		case hostsChan := <-hostsChanChan:
+			hostsChan <- hd.memorySafeHosts()
+		case <-hd.stopAggregator:
+			hd.stopStopAggregator <- true
+			break AGGREGATE_LOOP
+		}
+	}
+}
