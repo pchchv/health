@@ -26,6 +26,11 @@ type ApiResponseAggregationsOverall struct {
 	Overall *health.IntervalAggregation `json:"overall"`
 }
 
+type ApiResponseHosts struct {
+	apiResponse
+	Hosts []*HostStatus `json:"hosts"`
+}
+
 type apiContext struct {
 	hd *HealthD
 	*health.Job
