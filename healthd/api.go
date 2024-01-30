@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/pchchv/grom"
@@ -84,4 +85,33 @@ func renderJson(rw http.ResponseWriter, data interface{}) {
 		return
 	}
 	fmt.Fprintf(rw, string(jsonData))
+}
+
+func combineAggregations(aggregations []*health.IntervalAggregation) *health.IntervalAggregation {
+	if len(aggregations) == 0 {
+		return nil
+	}
+
+	overallAgg := health.NewIntervalAggregation(aggregations[0].IntervalStart)
+	for _, ia := range aggregations {
+		overallAgg.Merge(ia)
+	}
+	return overallAgg
+}
+
+func getSort(r *grom.Request) string {
+	return r.URL.Query().Get("sort")
+}
+
+func getLimit(r *grom.Request) int {
+	limit := r.URL.Query().Get("limit")
+	if limit == "" {
+		return 0
+	}
+
+	n, err := strconv.ParseInt(limit, 10, 0)
+	if err != nil {
+		return 0
+	}
+	return int(n)
 }
