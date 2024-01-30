@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/pchchv/health"
@@ -248,4 +249,20 @@ AGGREGATE_LOOP:
 			break AGGREGATE_LOOP
 		}
 	}
+}
+
+// shouldStop returns true if we've been flagged to stop
+func (hd *HealthD) shouldStop() bool {
+	v := atomic.LoadInt64(&hd.stopFlag)
+	return v == 1
+}
+
+func (hd *HealthD) getAggregationSequence() []*health.IntervalAggregation {
+	if hd.shouldStop() {
+		return nil
+	}
+
+	intervalsChan := make(chan []*health.IntervalAggregation)
+	hd.intervalsChanChan <- intervalsChan
+	return <-intervalsChan
 }
