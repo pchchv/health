@@ -2,10 +2,16 @@ package healthd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/pchchv/grom"
 	"github.com/pchchv/health"
 )
+
+type apiResponse struct {
+	InstanceId       string        `json:"instance_id"`
+	IntervalDuration time.Duration `json:"interval_duration"`
+}
 
 type apiContext struct {
 	hd *HealthD
