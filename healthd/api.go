@@ -2,6 +2,7 @@ package healthd
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/pchchv/grom"
@@ -56,4 +57,16 @@ func (c *apiContext) HealthMiddleware(rw grom.ResponseWriter, r *grom.Request, n
 		status = health.Error
 	}
 	c.CompleteKv(status, kvs)
+}
+
+func getApiResponse(duration time.Duration) apiResponse {
+	return apiResponse{
+		InstanceId:       health.Identifier,
+		IntervalDuration: duration,
+	}
+}
+
+func renderNotFound(rw http.ResponseWriter) {
+	rw.WriteHeader(404)
+	fmt.Fprintf(rw, `{"error": "not_found"}`)
 }
