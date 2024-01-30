@@ -13,6 +13,11 @@ type apiResponse struct {
 	IntervalDuration time.Duration `json:"interval_duration"`
 }
 
+type ApiResponseAggregations struct {
+	apiResponse
+	Aggregations []*health.IntervalAggregation `json:"aggregations"`
+}
+
 type apiContext struct {
 	hd *HealthD
 	*health.Job
