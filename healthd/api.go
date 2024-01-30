@@ -66,6 +66,25 @@ func (c *apiContext) HealthMiddleware(rw grom.ResponseWriter, r *grom.Request, n
 	c.CompleteKv(status, kvs)
 }
 
+func (c *apiContext) Aggregations(rw grom.ResponseWriter, r *grom.Request) {
+	aggregations := c.hd.getAggregationSequence()
+	resp := &ApiResponseAggregations{
+		apiResponse:  getApiResponse(c.hd.intervalDuration),
+		Aggregations: aggregations,
+	}
+	renderJson(rw, resp)
+}
+
+func (c *apiContext) Overall(rw grom.ResponseWriter, r *grom.Request) {
+	aggregations := c.hd.getAggregationSequence()
+	overall := combineAggregations(aggregations)
+	resp := &ApiResponseAggregationsOverall{
+		apiResponse: getApiResponse(c.hd.intervalDuration),
+		Overall:     overall,
+	}
+	renderJson(rw, resp)
+}
+
 func getApiResponse(duration time.Duration) apiResponse {
 	return apiResponse{
 		InstanceId:       health.Identifier,
