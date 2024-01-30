@@ -1,6 +1,7 @@
 package healthd
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -69,4 +70,18 @@ func getApiResponse(duration time.Duration) apiResponse {
 func renderNotFound(rw http.ResponseWriter) {
 	rw.WriteHeader(404)
 	fmt.Fprintf(rw, `{"error": "not_found"}`)
+}
+
+func renderError(rw http.ResponseWriter, err error) {
+	rw.WriteHeader(500)
+	fmt.Fprintf(rw, `{"error": "%s"}`, err.Error())
+}
+
+func renderJson(rw http.ResponseWriter, data interface{}) {
+	jsonData, err := json.MarshalIndent(data, "", "\t")
+	if err != nil {
+		renderError(rw, err)
+		return
+	}
+	fmt.Fprintf(rw, string(jsonData))
 }
