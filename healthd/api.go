@@ -242,3 +242,9 @@ func getLimit(r *grom.Request) int {
 	}
 	return int(n)
 }
+
+func sortJobs(jobs []*Job, sort string) {
+	if by, ok := jobSorters[sort]; ok {
+		by.Sort(jobs)
+	}
+}
