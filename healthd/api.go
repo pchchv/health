@@ -191,6 +191,18 @@ func (s *jobSorter) Less(i, j int) bool {
 
 type HostStatusByHostPort []*HostStatus
 
+func (a HostStatusByHostPort) Len() int {
+	return len(a)
+}
+
+func (a HostStatusByHostPort) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a HostStatusByHostPort) Less(i, j int) bool {
+	return a[i].HostPort < a[j].HostPort
+}
+
 func getApiResponse(duration time.Duration) apiResponse {
 	return apiResponse{
 		InstanceId:       health.Identifier,
