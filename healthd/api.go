@@ -117,6 +117,11 @@ func (c *apiContext) Overall(rw grom.ResponseWriter, r *grom.Request) {
 // that defines the ordering of its Planet arguments.
 type By func(j1, j2 *Job) bool
 
+type jobSorter struct {
+	jobs []*Job
+	by   By
+}
+
 func getApiResponse(duration time.Duration) apiResponse {
 	return apiResponse{
 		InstanceId:       health.Identifier,
