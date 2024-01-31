@@ -3,6 +3,7 @@ package healthd
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"sort"
 	"strconv"
@@ -247,4 +248,56 @@ func sortJobs(jobs []*Job, sort string) {
 	if by, ok := jobSorters[sort]; ok {
 		by.Sort(jobs)
 	}
+}
+
+func filterJobs(overall *health.IntervalAggregation, sort string, limit int) []*Job {
+	if overall == nil {
+		return nil
+	}
+	jobs := make([]*Job, 0, len(overall.Jobs))
+
+	for k, j := range overall.Jobs {
+		var avg, stddev float64
+		if j.Count == 0 {
+			avg = 0
+			stddev = 0
+		} else {
+			avg = float64(j.NanosSum) / float64(j.Count)
+			if j.Count == 1 {
+				stddev = 0
+			} else {
+				num := (float64(j.Count) * j.NanosSumSquares) - math.Pow(float64(j.NanosSum), 2)
+				div := float64(j.Count * (j.Count - 1))
+				stddev = math.Sqrt(num / div)
+			}
+		}
+		job := &Job{
+			Name:                 k,
+			Count:                j.Count,
+			CountSuccess:         j.CountSuccess,
+			CountValidationError: j.CountValidationError,
+			CountPanic:           j.CountPanic,
+			CountError:           j.CountError,
+			CountJunk:            j.CountJunk,
+			NanosSum:             j.NanosSum,
+			NanosSumSquares:      j.NanosSumSquares,
+			NanosMin:             j.NanosMin,
+			NanosMax:             j.NanosMax,
+			NanosAvg:             avg,
+			NanosStdDev:          stddev,
+		}
+		jobs = append(jobs, job)
+	}
+
+	sortJobs(jobs, sort)
+
+	if limit > 0 {
+		max := len(jobs)
+		if limit > max {
+			limit = max
+		}
+		jobs = jobs[0:limit]
+	}
+
+	return jobs
 }
