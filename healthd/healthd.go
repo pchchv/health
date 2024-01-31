@@ -68,6 +68,13 @@ type HealthD struct {
 	stopHTTP           func() bool
 }
 
+func (hd *HealthD) Stop() {
+	atomic.StoreInt64(&hd.stopFlag, 1)
+	hd.stopAggregator <- true
+	<-hd.stopStopAggregator
+	hd.stopHTTP()
+}
+
 // poll is meant to be alled in a new goroutine.
 // It will poll each managed host in a new goroutine.
 // When everything has finished, it will send nil to responses to signal that we have all data.
