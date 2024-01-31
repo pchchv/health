@@ -122,6 +122,22 @@ type jobSorter struct {
 	by   By
 }
 
+// Len is part of sort.Interface.
+func (s *jobSorter) Len() int {
+	return len(s.jobs)
+}
+
+// Swap is part of sort.Interface.
+func (s *jobSorter) Swap(i, j int) {
+	s.jobs[i], s.jobs[j] = s.jobs[j], s.jobs[i]
+}
+
+// Less is part of sort.Interface.
+// It is implemented by calling the "by" closure in the sorter.
+func (s *jobSorter) Less(i, j int) bool {
+	return s.by(s.jobs[i], s.jobs[j])
+}
+
 func getApiResponse(duration time.Duration) apiResponse {
 	return apiResponse{
 		InstanceId:       health.Identifier,
