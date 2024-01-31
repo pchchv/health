@@ -31,6 +31,24 @@ type ApiResponseHosts struct {
 	Hosts []*HostStatus `json:"hosts"`
 }
 
+// Job represents a health.JobAggregation,
+// but designed for JSON-ization without all the nested counters/timers
+type Job struct {
+	Name                 string  `json:"name"`
+	Count                int64   `json:"count"`
+	CountSuccess         int64   `json:"count_success"`
+	CountValidationError int64   `json:"count_validation_error"`
+	CountPanic           int64   `json:"count_panic"`
+	CountError           int64   `json:"count_error"`
+	CountJunk            int64   `json:"count_junk"`
+	NanosSum             int64   `json:"nanos_sum"`
+	NanosSumSquares      float64 `json:"nanos_sum_squares"`
+	NanosMin             int64   `json:"nanos_min"`
+	NanosMax             int64   `json:"nanos_max"`
+	NanosAvg             float64 `json:"nanos_avg"`
+	NanosStdDev          float64 `json:"nanos_std_dev"`
+}
+
 type apiContext struct {
 	hd *HealthD
 	*health.Job
