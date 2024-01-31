@@ -189,6 +189,8 @@ func (s *jobSorter) Less(i, j int) bool {
 	return s.by(s.jobs[i], s.jobs[j])
 }
 
+type HostStatusByHostPort []*HostStatus
+
 func getApiResponse(duration time.Duration) apiResponse {
 	return apiResponse{
 		InstanceId:       health.Identifier,
