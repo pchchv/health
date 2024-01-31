@@ -68,6 +68,34 @@ type HealthD struct {
 	stopHTTP           func() bool
 }
 
+func StartNewHealthD(monitoredHostPorts []string, serverHostPort string, stream *health.Stream) *HealthD {
+	hd := &HealthD{}
+	hd.stream = stream
+	hd.intervalsChanChan = make(chan chan []*health.IntervalAggregation, 16)
+	hd.hostsChanChan = make(chan chan []*HostStatus, 16)
+	hd.hostStatus = make(map[string]*HostStatus)
+	hd.hostAggregations = make(map[hostAggregationKey]*health.IntervalAggregation)
+	hd.intervalsNeedingRecalculation = make(map[time.Time]struct{})
+	hd.retain = time.Hour * 2 // In the future this should be configurable
+	hd.intervalDuration = 0   // We don't know this yet. Will be configured from polled hosts.
+	hd.maxIntervals = 0       // We don't know this yet. See above.
+	hd.stopAggregator = make(chan bool)
+	hd.stopStopAggregator = make(chan bool)
+	for _, hp := range monitoredHostPorts {
+		hd.hostStatus[hp] = &HostStatus{
+			HostPort: hp,
+		}
+	}
+
+	go hd.pollAndAggregate()
+
+	httpStarted := make(chan bool)
+	go hd.startHttpServer(serverHostPort, httpStarted)
+	<-httpStarted
+
+	return hd
+}
+
 func (hd *HealthD) Stop() {
 	atomic.StoreInt64(&hd.stopFlag, 1)
 	hd.stopAggregator <- true
