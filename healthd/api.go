@@ -113,6 +113,10 @@ func (c *apiContext) Overall(rw grom.ResponseWriter, r *grom.Request) {
 	renderJson(rw, resp)
 }
 
+// By is the type of a "less" function
+// that defines the ordering of its Planet arguments.
+type By func(j1, j2 *Job) bool
+
 func getApiResponse(duration time.Duration) apiResponse {
 	return apiResponse{
 		InstanceId:       health.Identifier,
