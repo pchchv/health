@@ -266,3 +266,12 @@ func (hd *HealthD) getAggregationSequence() []*health.IntervalAggregation {
 	hd.intervalsChanChan <- intervalsChan
 	return <-intervalsChan
 }
+
+func (hd *HealthD) getHosts() []*HostStatus {
+	if hd.shouldStop() {
+		return nil
+	}
+	hostsChan := make(chan []*HostStatus)
+	hd.hostsChanChan <- hostsChan
+	return <-hostsChan
+}
