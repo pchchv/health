@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/braintree/manners"
 	"github.com/pchchv/grom"
 	"github.com/pchchv/health"
 )
@@ -224,6 +225,39 @@ func (a HostStatusByHostPort) Swap(i, j int) {
 
 func (a HostStatusByHostPort) Less(i, j int) bool {
 	return a[i].HostPort < a[j].HostPort
+}
+
+func (hd *HealthD) apiRouter() http.Handler {
+	router := grom.New(apiContext{})
+	router.NotFound(func(rw grom.ResponseWriter, req *grom.Request) {
+		renderNotFound(rw)
+	})
+
+	healthdRouter := router.Subrouter(apiContext{}, "/healthd")
+
+	healthdRouter.Middleware(func(c *apiContext, rw grom.ResponseWriter, req *grom.Request, next grom.NextMiddlewareFunc) {
+		c.hd = hd
+		next(rw, req)
+	})
+
+	healthdRouter.Middleware((*apiContext).SetContentType).
+		Middleware((*apiContext).HealthMiddleware).
+		Get("/aggregations", (*apiContext).Aggregations).
+		Get("/aggregations/overall", (*apiContext).Overall).
+		Get("/jobs", (*apiContext).Jobs).
+		Get("/hosts", (*apiContext).Hosts)
+
+	return router
+}
+
+func (hd *HealthD) startHttpServer(hostPort string, done chan bool) {
+	server := manners.NewWithServer(&http.Server{
+		Addr:    hostPort,
+		Handler: hd.apiRouter(),
+	})
+	hd.stopHTTP = server.Close
+	done <- true
+	server.ListenAndServe()
 }
 
 func getApiResponse(duration time.Duration) apiResponse {
