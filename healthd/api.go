@@ -154,6 +154,29 @@ func (c *apiContext) Overall(rw grom.ResponseWriter, r *grom.Request) {
 	renderJson(rw, resp)
 }
 
+func (c *apiContext) Jobs(rw grom.ResponseWriter, r *grom.Request) {
+	sort := getSort(r)
+	limit := getLimit(r)
+	aggregations := c.hd.getAggregationSequence()
+	overall := combineAggregations(aggregations)
+	jobs := filterJobs(overall, sort, limit)
+	resp := &ApiResponseJobs{
+		apiResponse: getApiResponse(c.hd.intervalDuration),
+		Jobs:        jobs,
+	}
+	renderJson(rw, resp)
+}
+
+func (c *apiContext) Hosts(rw grom.ResponseWriter, r *grom.Request) {
+	hosts := c.hd.getHosts()
+	sort.Sort(HostStatusByHostPort(hosts))
+	resp := &ApiResponseHosts{
+		apiResponse: getApiResponse(c.hd.intervalDuration),
+		Hosts:       hosts,
+	}
+	renderJson(rw, resp)
+}
+
 // By is the type of a "less" function
 // that defines the ordering of its Planet arguments.
 type By func(j1, j2 *Job) bool
