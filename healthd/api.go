@@ -4,12 +4,52 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
 	"github.com/pchchv/grom"
 	"github.com/pchchv/health"
 )
+
+var jobSorters = map[string]By{
+	"name": func(j1, j2 *Job) bool {
+		return j1.Name < j2.Name
+	},
+	"count": func(j1, j2 *Job) bool {
+		return j1.Count > j2.Count
+	},
+	"count_success": func(j1, j2 *Job) bool {
+		return j1.CountSuccess > j2.CountSuccess
+	},
+	"count_validation_error": func(j1, j2 *Job) bool {
+		return j1.CountValidationError > j2.CountValidationError
+	},
+	"count_panic": func(j1, j2 *Job) bool {
+		return j1.CountPanic > j2.CountPanic
+	},
+	"count_error": func(j1, j2 *Job) bool {
+		return j1.CountError > j2.CountError
+	},
+	"count_junk": func(j1, j2 *Job) bool {
+		return j1.CountJunk > j2.CountJunk
+	},
+	"total_time": func(j1, j2 *Job) bool {
+		return j1.NanosSum > j2.NanosSum
+	},
+	"avg": func(j1, j2 *Job) bool {
+		return j1.NanosAvg > j2.NanosAvg
+	},
+	"min": func(j1, j2 *Job) bool {
+		return j1.NanosMin > j2.NanosMin
+	},
+	"max": func(j1, j2 *Job) bool {
+		return j1.NanosMax > j2.NanosMax
+	},
+	"stddev": func(j1, j2 *Job) bool {
+		return j1.NanosStdDev > j2.NanosStdDev
+	},
+}
 
 type apiResponse struct {
 	InstanceId       string        `json:"instance_id"`
@@ -116,6 +156,16 @@ func (c *apiContext) Overall(rw grom.ResponseWriter, r *grom.Request) {
 // By is the type of a "less" function
 // that defines the ordering of its Planet arguments.
 type By func(j1, j2 *Job) bool
+
+// Sort is a method on the function type,
+// By, that sorts the argument slice according to the function.
+func (by By) Sort(jobs []*Job) {
+	js := &jobSorter{
+		jobs: jobs,
+		by:   by, // Sort method's receiver is the function (closure) that defines the sort order
+	}
+	sort.Sort(js)
+}
 
 type jobSorter struct {
 	jobs []*Job
