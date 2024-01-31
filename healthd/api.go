@@ -49,6 +49,11 @@ type Job struct {
 	NanosStdDev          float64 `json:"nanos_std_dev"`
 }
 
+type ApiResponseJobs struct {
+	apiResponse
+	Jobs []*Job `json:"jobs"`
+}
+
 type apiContext struct {
 	hd *HealthD
 	*health.Job
