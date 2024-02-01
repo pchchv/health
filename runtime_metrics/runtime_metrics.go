@@ -83,3 +83,20 @@ func (rm *RuntimeMetrics) Report() {
 func (rm *RuntimeMetrics) reportGauge(key string, val float64) {
 	rm.stream.Gauge(key, val)
 }
+
+func (rm *RuntimeMetrics) metricsPoller() {
+	ticker := time.NewTicker(rm.options.Interval)
+
+METRICS_POOLER_LOOP:
+	for {
+		select {
+		case <-rm.stopChan:
+			break METRICS_POOLER_LOOP
+		case <-ticker.C:
+			rm.Report()
+		}
+	}
+
+	ticker.Stop()
+	rm.stopStopChan <- true
+}
