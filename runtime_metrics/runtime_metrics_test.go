@@ -19,3 +19,9 @@ func (t *testReceiver) EventErrKv(eventName string, err error, kvs map[string]st
 func (t *testReceiver) Timing(eventName string, nanoseconds int64) {}
 
 func (t *testReceiver) TimingKv(eventName string, nanoseconds int64, kvs map[string]string) {}
+
+func (t *testReceiver) GaugeKv(eventName string, value float64, kvs map[string]string) {}
+
+func (t *testReceiver) Gauge(eventName string, value float64) {
+	t.gauges[eventName] = value
+}
