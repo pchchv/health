@@ -80,6 +80,15 @@ func (rm *RuntimeMetrics) Report() {
 	}
 }
 
+func (rm *RuntimeMetrics) Start() {
+	go rm.metricsPoller()
+}
+
+func (rm *RuntimeMetrics) Stop() {
+	rm.stopChan <- true
+	<-rm.stopStopChan
+}
+
 func (rm *RuntimeMetrics) reportGauge(key string, val float64) {
 	rm.stream.Gauge(key, val)
 }
