@@ -22,3 +22,17 @@ type RuntimeMetrics struct {
 	stopChan     chan bool
 	stopStopChan chan bool
 }
+
+func NewRuntimeMetrics(stream health.EventReceiver, options *Options) *RuntimeMetrics {
+	rm := &RuntimeMetrics{
+		stream:       stream,
+		stopChan:     make(chan bool),
+		stopStopChan: make(chan bool),
+	}
+	if options != nil {
+		rm.options = *options
+	} else {
+		rm.options = Options{time.Second * 5, true, true, true, true, true, true}
+	}
+	return rm
+}
