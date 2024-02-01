@@ -11,6 +11,35 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestHealthD(t *testing.T) {
+	// Make two sinks:
+	sink := health.NewJsonPollingSink(time.Minute, time.Minute*5)
+	sink.StartServer(":6050")
+	sink.EmitEvent("foo", "bar", nil)
+	sink.EmitTiming("foo", "baz", 1234, nil)
+	sink.EmitComplete("foo", health.Success, 5678, nil)
+
+	sink2 := health.NewJsonPollingSink(time.Minute, time.Minute*5)
+	sink2.StartServer(":6051")
+	sink2.EmitEvent("foo", "bar", nil)
+	sink2.EmitTiming("foo", "baz", 4321, nil)
+	sink2.EmitComplete("foo", health.ValidationError, 8765, nil)
+
+	hd := StartNewHealthD([]string{":6050", ":6051"}, ":6060", health.NewStream())
+
+	defer func() {
+		hd.Stop()
+		time.Sleep(time.Millisecond)
+	}()
+
+	time.Sleep(time.Millisecond * 15)
+
+	testAggregations(t, hd)
+	testAggregationsOverall(t, hd)
+	testJobs(t, hd)
+	testHosts(t, hd)
+}
+
 // assertFooBarAggregation asserts that intAgg is the aggregation (generally) of the stuff created in TestHealthD
 func assertFooBarAggregation(t *testing.T, intAgg *health.IntervalAggregation) {
 	assert.EqualValues(t, intAgg.Events["bar"], 2)
