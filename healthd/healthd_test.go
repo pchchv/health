@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/pchchv/health"
 	"github.com/stretchr/testify/assert"
@@ -75,4 +76,29 @@ func testJobs(t *testing.T, hd *HealthD) {
 	assert.InDelta(t, job.NanosAvg, 7221.5, 0.01)
 	assert.InDelta(t, job.NanosSumSquares, 1.09064909e+08, 0.01)
 	assert.InDelta(t, job.NanosStdDev, 2182.8386, 0.01)
+}
+
+func testHosts(t *testing.T, hd *HealthD) {
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/healthd/hosts", nil)
+	hd.apiRouter().ServeHTTP(recorder, request)
+	assert.Equal(t, 200, recorder.Code)
+
+	var resp ApiResponseHosts
+	err := json.Unmarshal(recorder.Body.Bytes(), &resp)
+
+	assert.NoError(t, err)
+	assert.Equal(t, len(resp.Hosts), 2)
+	assert.Equal(t, resp.Hosts[0].HostPort, ":6050")
+	assert.Equal(t, resp.Hosts[1].HostPort, ":6051")
+
+	for _, hs := range resp.Hosts {
+		assert.WithinDuration(t, hs.LastCheckTime, time.Now(), time.Second*2)
+		assert.WithinDuration(t, hs.FirstSuccessfulResponse, time.Now(), time.Second*2)
+		assert.WithinDuration(t, hs.LastSuccessfulResponse, time.Now(), time.Second*2)
+		assert.EqualValues(t, hs.LastInstanceId, health.Identifier)
+		assert.EqualValues(t, hs.LastIntervalDuration, time.Minute)
+		assert.EqualValues(t, hs.LastCode, 200)
+		assert.Equal(t, hs.LastErr, "")
+	}
 }
