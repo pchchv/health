@@ -36,3 +36,7 @@ func NewRuntimeMetrics(stream health.EventReceiver, options *Options) *RuntimeMe
 	}
 	return rm
 }
+
+func (rm *RuntimeMetrics) reportGauge(key string, val float64) {
+	rm.stream.Gauge(key, val)
+}
