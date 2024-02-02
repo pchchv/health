@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/buger/goterm"
 	"github.com/pchchv/health/healthd"
@@ -180,4 +181,28 @@ func pollHealthDJobs(opts *jobOptions, responses chan *healthd.ApiResponseJobs, 
 	}
 
 	responses <- &response
+}
+
+func jobsLoop(opts *jobOptions) {
+	var hStatus healthdStatus
+	var lastApiResponse *healthd.ApiResponseJobs
+	responses := make(chan *healthd.ApiResponseJobs)
+	secondTicker := time.Tick(1 * time.Second)
+	errors := make(chan error)
+
+	go pollHealthDJobs(opts, responses, errors)
+	for {
+		select {
+		case <-secondTicker:
+			go pollHealthDJobs(opts, responses, errors)
+			printJobs(lastApiResponse, &hStatus)
+		case resp := <-responses:
+			lastApiResponse = resp
+			hStatus.lastSuccessAt = time.Now()
+			printJobs(lastApiResponse, &hStatus)
+		case err := <-errors:
+			hStatus.lastErrorAt = time.Now()
+			hStatus.lastError = err
+		}
+	}
 }
