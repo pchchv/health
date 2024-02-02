@@ -11,6 +11,11 @@ func main() {
 	// Read from env variables for now (command line options?)
 	monitoredHostPorts := getMonitoredHostPorts()
 	serverHostPort := getServerHostPort()
+	healthHostPort := getHealthHostPort()
+
+	// Monitor ourselves.
+	// This will make our own instrumentation show up in the healthd output.
+	monitoredHostPorts = append(monitoredHostPorts, healthHostPort)
 }
 
 func getMonitoredHostPorts() []string {
@@ -27,6 +32,14 @@ func getServerHostPort() string {
 	ret := os.Getenv("HEALTHD_SERVER_HOSTPORT")
 	if ret == "" {
 		ret = ":5031"
+	}
+	return ret
+}
+
+func getHealthHostPort() string {
+	ret := os.Getenv("HEALTH_HOSTPORT")
+	if ret == "" {
+		ret = ":5030"
 	}
 	return ret
 }
