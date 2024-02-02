@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/buger/goterm"
@@ -128,4 +132,52 @@ func maxRows() uint {
 		n = 3
 	}
 	return uint(n)
+}
+
+func pollHealthDJobs(opts *jobOptions, responses chan *healthd.ApiResponseJobs, errors chan error) {
+	var body []byte
+	// If name is not set, then limit it to the terminal height.
+	// if name IS set, then don't limit it b/c we will currently filter in-memory
+	var limit uint
+	if opts.Name == "" {
+		limit = maxRows()
+	}
+
+	values := url.Values{}
+	if opts.Sort != "" {
+		values.Add("sort", opts.Sort)
+	}
+	if limit != 0 {
+		values.Add("limit", fmt.Sprint(limit))
+	}
+
+	uri := "http://" + sourceHostPort + "/healthd/jobs"
+	params := values.Encode()
+	if params != "" {
+		uri = uri + "?" + params
+	}
+
+	resp, err := http.Get(uri)
+	if err != nil {
+		errors <- err
+		return
+	}
+	defer resp.Body.Close()
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		errors <- err
+		return
+	}
+
+	var response healthd.ApiResponseJobs
+	if err := json.Unmarshal(body, &response); err != nil {
+		errors <- err
+		return
+	}
+
+	if opts.Name != "" {
+		filterJobsByName(&response, opts.Name)
+	}
+
+	responses <- &response
 }
