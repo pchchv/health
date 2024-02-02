@@ -83,3 +83,27 @@ func pollHealthDHosts(responses chan *healthd.ApiResponseHosts, errors chan erro
 
 	responses <- &response
 }
+
+func hostsLoop() {
+	var hStatus healthdStatus
+	var lastApiResponse *healthd.ApiResponseHosts
+	responses := make(chan *healthd.ApiResponseHosts)
+	secondTicker := time.Tick(1 * time.Second)
+	errors := make(chan error)
+
+	go pollHealthDHosts(responses, errors)
+	for {
+		select {
+		case <-secondTicker:
+			go pollHealthDHosts(responses, errors)
+			printHosts(lastApiResponse, &hStatus)
+		case resp := <-responses:
+			lastApiResponse = resp
+			hStatus.lastSuccessAt = time.Now()
+			printHosts(lastApiResponse, &hStatus)
+		case err := <-errors:
+			hStatus.lastErrorAt = time.Now()
+			hStatus.lastError = err
+		}
+	}
+}
