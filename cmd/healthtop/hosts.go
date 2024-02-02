@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"time"
 
@@ -55,4 +58,28 @@ func printHosts(lastApiResponse *healthd.ApiResponseHosts, status *healthdStatus
 	}
 
 	goterm.Println(table)
+}
+
+func pollHealthDHosts(responses chan *healthd.ApiResponseHosts, errors chan error) {
+	var body []byte
+	uri := "http://" + sourceHostPort + "/healthd/hosts"
+	resp, err := http.Get(uri)
+	if err != nil {
+		errors <- err
+		return
+	}
+	defer resp.Body.Close()
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		errors <- err
+		return
+	}
+
+	var response healthd.ApiResponseHosts
+	if err := json.Unmarshal(body, &response); err != nil {
+		errors <- err
+		return
+	}
+
+	responses <- &response
 }
