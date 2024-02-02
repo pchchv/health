@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/pchchv/health"
 )
 
 func main() {
@@ -16,6 +19,14 @@ func main() {
 	// Monitor ourselves.
 	// This will make our own instrumentation show up in the healthd output.
 	monitoredHostPorts = append(monitoredHostPorts, healthHostPort)
+
+	// Setup our health stream.
+	// Log to stdout and a setup an polling sink
+	stream := health.NewStream()
+	stream.AddSink(&health.WriterSink{Writer: os.Stdout})
+	jsonPollingSink := health.NewJsonPollingSink(time.Minute, time.Minute*5)
+	jsonPollingSink.StartServer(healthHostPort)
+	stream.AddSink(jsonPollingSink)
 }
 
 func getMonitoredHostPorts() []string {
