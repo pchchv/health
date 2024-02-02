@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/buger/goterm"
 	"github.com/pchchv/health/healthd"
@@ -68,4 +69,41 @@ func printJob(table *goterm.Table, job *healthd.Job) {
 	printCellNanos(job.NanosMax, table, false, false, false)
 	printCellNanos(job.NanosSum, table, false, false, false)
 	fmt.Fprintf(table, "\n")
+}
+
+func printJobs(lastApiResponse *healthd.ApiResponseJobs, status *healthdStatus) {
+	goterm.Clear() // clear current screen
+	goterm.MoveCursor(1, 1)
+	defer goterm.Flush()
+	goterm.Println("Current Time:", status.FmtNow(), "   Status:", status.FmtStatus())
+
+	if lastApiResponse == nil {
+		goterm.Println("no data yet")
+		return
+	}
+
+	columns := []string{
+		"Job",
+		"Total Count",
+		"Success",
+		"ValidationError",
+		"Panic",
+		"Error",
+		"Junk",
+		"Avg Response Time",
+		"Stddev",
+		"Min",
+		"Max",
+		"Total",
+	}
+	for i, s := range columns {
+		columns[i] = goterm.Bold(goterm.Color(s, goterm.BLACK))
+	}
+
+	table := goterm.NewTable(0, goterm.Width()-1, 5, ' ', 0)
+	fmt.Fprintf(table, "%s\n", strings.Join(columns, "\t"))
+	for _, job := range lastApiResponse.Jobs {
+		printJob(table, job)
+	}
+	goterm.Println(table)
 }
