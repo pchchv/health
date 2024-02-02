@@ -7,7 +7,10 @@ import (
 )
 
 func main() {
+	// Get inputs.
+	// Read from env variables for now (command line options?)
 	monitoredHostPorts := getMonitoredHostPorts()
+	serverHostPort := getServerHostPort()
 }
 
 func getMonitoredHostPorts() []string {
@@ -18,4 +21,12 @@ func getMonitoredHostPorts() []string {
 		os.Exit(1)
 	}
 	return strings.Split(hps, ",")
+}
+
+func getServerHostPort() string {
+	ret := os.Getenv("HEALTHD_SERVER_HOSTPORT")
+	if ret == "" {
+		ret = ":5031"
+	}
+	return ret
 }
