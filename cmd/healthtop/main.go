@@ -3,7 +3,11 @@ package main
 import (
 	"fmt"
 	"time"
+
+	"github.com/spf13/cobra"
 )
+
+var sourceHostPort string
 
 type healthdStatus struct {
 	lastSuccessAt time.Time
@@ -25,4 +29,33 @@ func (s *healthdStatus) FmtStatus() string {
 	}
 }
 
-func main() {}
+func main() {
+	var sort string
+	var name string
+	var cmdRoot = &cobra.Command{
+		Use: "healthtop [command]",
+	}
+	cmdRoot.PersistentFlags().StringVar(&sourceHostPort, "source", "localhost:5032", "source is the host:port of the healthd to query. ex: localhost:5031")
+	var cmdJobs = &cobra.Command{
+		Use:   "jobs",
+		Short: "list jobs",
+		Run: func(cmd *cobra.Command, args []string) {
+			jobsLoop(&jobOptions{Name: name, Sort: sort})
+		},
+	}
+
+	cmdJobs.Flags().StringVar(&sort, "sort", "name", "sort ∈ {name, count, count_success, count_XXX, min, max, avg}")
+	cmdJobs.Flags().StringVar(&name, "name", "", "name is a partial match on the name")
+
+	var cmdHosts = &cobra.Command{
+		Use:   "hosts",
+		Short: "list hosts",
+		Run: func(cmd *cobra.Command, args []string) {
+			hostsLoop()
+		},
+	}
+
+	cmdRoot.AddCommand(cmdJobs)
+	cmdRoot.AddCommand(cmdHosts)
+	cmdRoot.Execute()
+}
