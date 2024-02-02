@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pchchv/health"
+	"github.com/pchchv/health/healthd"
 )
 
 func main() {
@@ -27,6 +28,19 @@ func main() {
 	jsonPollingSink := health.NewJsonPollingSink(time.Minute, time.Minute*5)
 	jsonPollingSink.StartServer(healthHostPort)
 	stream.AddSink(jsonPollingSink)
+
+	// Say we're starting!
+	stream.EventKv("starting", health.Kvs{
+		"monitored_host_ports": strings.Join(monitoredHostPorts, ","),
+		"server_host_port":     serverHostPort,
+		"health_host_port":     healthHostPort,
+	})
+
+	// Start the healthd aggregators in a goroutine(s)
+	healthd.StartNewHealthD(monitoredHostPorts, serverHostPort, stream)
+
+	// Block
+	select {}
 }
 
 func getMonitoredHostPorts() []string {
