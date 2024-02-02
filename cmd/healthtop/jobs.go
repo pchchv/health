@@ -107,3 +107,25 @@ func printJobs(lastApiResponse *healthd.ApiResponseJobs, status *healthdStatus) 
 	}
 	goterm.Println(table)
 }
+
+// Given the api response, remove any job entries that don't have 'name' in them.
+func filterJobsByName(resp *healthd.ApiResponseJobs, name string) {
+	filteredSlice := []*healthd.Job{}
+	for _, job := range resp.Jobs {
+		if strings.Contains(job.Name, name) {
+			filteredSlice = append(filteredSlice, job)
+		}
+	}
+	resp.Jobs = filteredSlice
+}
+
+// Returns the max amount of metrics/rows we can display
+// This is the # of rows in the terminal minus 2 (for time / stats + grid header)
+// To elimate any weird cases where the terminal is super short, we'll return a min rows of 3
+func maxRows() uint {
+	n := goterm.Height() - 2
+	if n < 3 {
+		n = 3
+	}
+	return uint(n)
+}
