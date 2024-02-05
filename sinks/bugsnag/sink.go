@@ -35,6 +35,21 @@ func NewSink(config *Config) *Sink {
 	return s
 }
 
+func (s *Sink) EmitEvent(job string, event string, kvs map[string]string) {
+	// no-op
+}
+
+func (s *Sink) EmitEventErr(job string, event string, inputErr error, kvs map[string]string) {
+	switch inputErr := inputErr.(type) {
+	case *health.UnmutedError:
+		if !inputErr.Emitted {
+			s.cmdChan <- &cmdEventErr{Job: job, Event: event, Err: inputErr, Kvs: kvs}
+		}
+	case *health.MutedError:
+		// Do nothing!
+	}
+}
+
 func errorProcessingLoop(sink *Sink) {
 	cmdChan := sink.cmdChan
 	doneChan := sink.doneChan
