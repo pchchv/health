@@ -1,5 +1,7 @@
 package bugsnag
 
+import "github.com/pchchv/health/stack"
+
 type Config struct {
 	// Your Bugsnag API key, e.g. "c9d60ae4c7e70c4b6c4ebd3e8056d2b8".
 	APIKey string
@@ -64,4 +66,47 @@ type payload struct {
 		Version string `json:"version"`
 		URL     string `json:"url"`
 	} `json:"notifier"`
+}
+
+func newPayload(config *Config, jobName string, eventName string, err error, trace *stack.Trace, kvs map[string]string) *payload {
+	except := payloadException{
+		ErrorClass: eventName,
+		Message:    err.Error(),
+	}
+	for _, frame := range trace.Frames() {
+		pf := payloadFrame{
+			File:       frame.File,
+			LineNumber: frame.LineNumber,
+			Method:     frame.Package + ":" + frame.Name,
+			InProject:  !frame.IsSystemPackage,
+		}
+		except.Stacktrace = append(except.Stacktrace, pf)
+	}
+
+	evt := payloadEvent{
+		PayloadVersion: "2",
+		Exceptions:     []payloadException{except},
+		Context:        jobName,
+	}
+	evt.App.ReleaseStage = config.ReleaseStage
+	evt.Device.Hostname = config.Hostname
+	evt.Metadata.Kvs = kvs
+
+	if requestUrl, requestUrlExists := kvs["request"]; requestUrlExists {
+		evt.Metadata.Request.Url = requestUrl
+	}
+
+	if formData, formDataExists := kvs["formdata"]; formDataExists {
+		evt.Metadata.Request.Parameters = formData
+	}
+
+	p := payload{
+		APIKey: config.APIKey,
+		Events: []payloadEvent{evt},
+	}
+	p.Notifier.Name = "health"
+	p.Notifier.Version = "1.0"
+	p.Notifier.URL = "https://www.github.com/gocraft/health"
+
+	return &p
 }
