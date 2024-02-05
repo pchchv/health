@@ -1,6 +1,14 @@
 package bugsnag
 
-import "github.com/pchchv/health/stack"
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+
+	"github.com/pchchv/health/stack"
+)
 
 type Config struct {
 	// Your Bugsnag API key, e.g. "c9d60ae4c7e70c4b6c4ebd3e8056d2b8".
@@ -66,6 +74,35 @@ type payload struct {
 		Version string `json:"version"`
 		URL     string `json:"url"`
 	} `json:"notifier"`
+}
+
+// Notify will send the error and stack trace to Bugsnag. Note that this doesn't take advantage of all of Bugsnag's capabilities.
+func Notify(config *Config, jobName string, eventName string, err error, trace *stack.Trace, kvs map[string]string) error {
+	// Make a struct that serializes to the JSON needed for the API request to bugsnag
+	p := newPayload(config, jobName, eventName, err, trace, kvs)
+	// JSON serialize it
+	data, err := json.MarshalIndent(p, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	// Post it to the server:
+	client := http.Client{}
+	resp, err := client.Post(config.Endpoint, "application/json", bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if string(body) != "OK" {
+		return errors.New("response from bugsnag wasn't 'OK'")
+	}
+
+	return nil
 }
 
 func newPayload(config *Config, jobName string, eventName string, err error, trace *stack.Trace, kvs map[string]string) *payload {
