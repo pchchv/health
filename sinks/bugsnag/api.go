@@ -55,3 +55,13 @@ type payloadEvent struct {
 		Kvs     map[string]string `json:"kvs"`
 	} `json:"metaData"`
 }
+
+type payload struct {
+	APIKey   string         `json:"apiKey"`
+	Events   []payloadEvent `json:"events"`
+	Notifier struct {
+		Name    string `json:"name"`
+		Version string `json:"version"`
+		URL     string `json:"url"`
+	} `json:"notifier"`
+}
