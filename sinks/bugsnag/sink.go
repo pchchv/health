@@ -21,6 +21,20 @@ type Sink struct {
 	doneChan chan int
 }
 
+func NewSink(config *Config) *Sink {
+	const maxChanSize = 25
+
+	s := &Sink{
+		Config:   config,
+		cmdChan:  make(chan *cmdEventErr, maxChanSize),
+		doneChan: make(chan int),
+	}
+
+	go errorProcessingLoop(s)
+
+	return s
+}
+
 func errorProcessingLoop(sink *Sink) {
 	cmdChan := sink.cmdChan
 	doneChan := sink.doneChan
