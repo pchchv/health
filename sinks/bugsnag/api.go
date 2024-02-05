@@ -26,3 +26,9 @@ type payloadFrame struct {
 	Method     string `json:"method"`
 	InProject  bool   `json:"inProject"`
 }
+
+type payloadException struct {
+	ErrorClass string         `json:"errorClass"`
+	Message    string         `json:"message"`
+	Stacktrace []payloadFrame `json:"stacktrace"`
+}
