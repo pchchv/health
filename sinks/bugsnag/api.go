@@ -32,3 +32,26 @@ type payloadException struct {
 	Message    string         `json:"message"`
 	Stacktrace []payloadFrame `json:"stacktrace"`
 }
+
+type payloadEvent struct {
+	PayloadVersion string             `json:"payloadVersion"`
+	Exceptions     []payloadException `json:"exceptions"`
+	// threads
+	Context string `json:"context"`
+	// groupingHash
+	// severity
+	// user
+	App struct {
+		// version
+		ReleaseStage string `json:"releaseStage"`
+	} `json:"app"`
+	Device struct {
+		//osVersion
+		Hostname string `json:"hostname"`
+	} `json:"device"`
+	// meta data
+	Metadata struct {
+		Request request           `json:"request"`
+		Kvs     map[string]string `json:"kvs"`
+	} `json:"metaData"`
+}
