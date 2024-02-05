@@ -14,3 +14,15 @@ type Config struct {
 	// os.Hostname() and is graphed in the Bugsnag dashboard.
 	Hostname string
 }
+
+type request struct {
+	Url        string `json:"url"`
+	Parameters string `json:"parameters"`
+}
+
+type payloadFrame struct {
+	File       string `json:"file"`
+	LineNumber int    `json:"lineNumber"`
+	Method     string `json:"method"`
+	InProject  bool   `json:"inProject"`
+}
