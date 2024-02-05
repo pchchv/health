@@ -8,3 +8,10 @@ type cmdEventErr struct {
 	Err   *health.UnmutedError
 	Kvs   map[string]string
 }
+
+// This sink emits to a StatsD deaemon by sending it a UDP packet.
+type Sink struct {
+	*Config
+	cmdChan  chan *cmdEventErr
+	doneChan chan int
+}
